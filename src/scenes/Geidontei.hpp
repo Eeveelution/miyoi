@@ -1,6 +1,18 @@
-#include "psyqo/font.hh"
-#include "third_party/nugget/psyqo/gpu.hh"
-#include "third_party/nugget/psyqo/scene.hh"
+#pragma once
+
+#include <psyqo/font.hh>
+
+#include <psyqo/gpu.hh>
+#include <psyqo/scene.hh>
+
+#include "../GameBase.hpp"
+#include "EASTL/array.h"
+#include "psyqo/fragment-concept.hh"
+#include "psyqo/fragments.hh"
+#include "psyqo/primitives/common.hh"
+#include "psyqo/primitives/misc.hh"
+#include "psyqo/primitives/quads.hh"
+#include "psyqo/trigonometry.hh"
 
 namespace mi {
     namespace Scenes {
@@ -11,9 +23,15 @@ namespace mi {
             uint8_t _anim = 0;
             bool _direction = true;
 
-            psyqo::Font<> _font;
+            GameBase& _game; 
+
+            psyqo::Fragments::SimpleFragment<psyqo::Prim::FastFill> m_clearFragment[2];
+            psyqo::Color m_clearColor = { .r = 0, .g = 0, .b = 0 };
+
+            eastl::array< psyqo::Fragments::SimpleFragment<psyqo::Prim::Quad>, 6 > m_quadFragments;
+            psyqo::Angle m_currentAngle;
         public:
-            Geidontei(psyqo::Font<> textFont);
+            Geidontei(GameBase& game);
 
             void frame() override;
         };

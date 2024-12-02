@@ -15,7 +15,7 @@
         "gdbpath": "gdb-multiarch.exe"
       },
       "osx": {
-        "gdbpath": "gdb"
+        "gdbpath": "/opt/homebrew/Cellar/mipsel-none-elf-gdb/15.1/bin/mipsel-none-elf-gdb"
       },
       "executable": "${workspaceRoot}/${workspaceRootFolderName}.elf",
       "autorun": [
