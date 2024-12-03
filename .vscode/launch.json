@@ -9,6 +9,7 @@
       "remote": true,
       "cwd": "${workspaceRoot}",
       "valuesFormatting": "parseText",
+      "preLaunchTask": "Build Debug",
       "stopAtConnect": true,
       "gdbpath": "gdb-multiarch",
       "windows": {

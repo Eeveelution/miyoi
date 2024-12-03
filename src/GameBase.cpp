@@ -40,7 +40,7 @@ void GameBase::createScene() {
     psyqo::GTE::clear<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>();
 
     //projection plane distance (todo: play around with this)
-    psyqo::GTE::write<psyqo::GTE::Register::H, psyqo::GTE::Unsafe>(120);
+    psyqo::GTE::write<psyqo::GTE::Register::H, psyqo::GTE::Unsafe>(240);
 
     //specify scaling for Z averaging on the GTE
     psyqo::GTE::write<psyqo::GTE::Register::ZSF3, psyqo::GTE::Unsafe>(OT_SIZE / 3);

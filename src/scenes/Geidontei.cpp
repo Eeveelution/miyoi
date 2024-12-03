@@ -1,9 +1,14 @@
 #include "Geidontei.hpp"
 #include "EASTL/array.h"
+#include "psyqo/fixed-point.hh"
 #include "psyqo/gte-kernels.hh"
 #include "psyqo/gte-registers.hh"
 #include "psyqo/primitives/common.hh"
 #include "psyqo/vector.hh"
+
+#include "src/gte/GteShortcuts.hpp"
+#include "src/math/Common.hpp"
+#include "src/math/Camera.hpp"
 
 #include <psyqo/font.hh>
 #include <psyqo/soft-math.hh>
@@ -22,7 +27,13 @@ struct Face {
 };
 
 void mi::Scenes::Geidontei::frame() {
-    
+    m_Camera.position = {0.5, 0.0, 0.0};
+    m_Camera.rotation = {0, 0};
+
+    m_Camera.viewRotationMtx = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.y, psyqo::SoftMath::Axis::Y, _game.m_Trig);
+    const auto xRot = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.x, psyqo::SoftMath::Axis::X, _game.m_Trig);
+
+    psyqo::SoftMath::multiplyMatrix33(m_Camera.viewRotationMtx, xRot, &m_Camera.viewRotationMtx);
 
     // _game
     //     .getSystemFont()
@@ -54,7 +65,9 @@ void mi::Scenes::Geidontei::frame() {
     };
 
     //translate the cube 512 to the Z axis
-    psyqo::GTE::write<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>(1024);
+    // psyqo::GTE::write<psyqo::GTE::Register::TRX, psyqo::GTE::Unsafe>(1);
+    // psyqo::GTE::write<psyqo::GTE::Register::TRY, psyqo::GTE::Unsafe>(1);
+    // psyqo::GTE::write<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>(1024);
 
     auto transform = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::X, _game.m_Trig);
     auto rot = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::Y, _game.m_Trig);
@@ -63,29 +76,46 @@ void mi::Scenes::Geidontei::frame() {
 
     psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Rotation>(transform);
 
+        //CAMERA POS
+    psyqo::FixedPoint<> fp = 1;
+    fp *= gpu().getFrameCount();
+
+    auto objPos = psyqo::Vec3{0.00, 0.01, 1};
+
+    auto diffCamPosToObj= objPos - m_Camera.position;
+
+    auto test = objPos.z - m_Camera.position.z;
+    auto test2 = test.integer();
+
+    psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Translation>(diffCamPosToObj);
+
+    //END CAMERA POS
+
     //place to store our transformed vertices
     eastl::array<psyqo::Vertex, 4> projectedVerts;
 
     for(int i = 0; i < 6; i++) {
         const auto currentFace = cubeFaces[i];
         //Load vertices into GTE
-        psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V0>( cubeVerts[currentFace.vertices[0]] );
-        psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V1>( cubeVerts[currentFace.vertices[1]] );
-        psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V2>( cubeVerts[currentFace.vertices[2]] );
+        mi::gte::setInputVertices(
+            cubeVerts[currentFace.vertices[0]], 
+            cubeVerts[currentFace.vertices[1]], 
+            cubeVerts[currentFace.vertices[2]]
+        );
 
         //use the matricies loaded into the GTE (translation, rotation, etc.) to do perspective transformation
         psyqo::GTE::Kernels::rtpt();
 
         //check winding to see if we can skip drawing this face
-        // psyqo::GTE::Kernels::nclip();
+        psyqo::GTE::Kernels::nclip();
 
-        // uint32_t nClipResult;
-        // psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
+        uint32_t nClipResult;
+        psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
 
         //face isn't facing us, can skip
-        // if(nClipResult <= 0) {
-        //     //continue;
-        // }
+        if(nClipResult <= 0) {
+            //continue;
+        }
 
         //so, the GTE can only work on 3 vertices at a time, a quad has 4
         //so we first save the first vertex, then we can load the 4th one in its place

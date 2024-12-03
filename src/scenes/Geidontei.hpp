@@ -13,6 +13,7 @@
 #include "psyqo/primitives/misc.hh"
 #include "psyqo/primitives/quads.hh"
 #include "psyqo/trigonometry.hh"
+#include "src/math/Camera.hpp"
 
 namespace mi {
     namespace Scenes {
@@ -30,6 +31,8 @@ namespace mi {
 
             eastl::array< psyqo::Fragments::SimpleFragment<psyqo::Prim::Quad>, 6 > m_quadFragments;
             psyqo::Angle m_currentAngle;
+
+            mi::math::Camera m_Camera{};
         public:
             Geidontei(GameBase& game);
 
