@@ -1,6 +1,7 @@
 #include "GameBase.hpp"
 #include "psyqo/fixed-point.hh"
 #include "scenes/Geidontei.hpp"
+#include "src/gpu/Common.hpp"
 
 #include <psyqo/gte-kernels.hh>
 #include <psyqo/gte-registers.hh>
@@ -39,12 +40,12 @@ void GameBase::createScene() {
     psyqo::GTE::clear<psyqo::GTE::Register::TRY, psyqo::GTE::Unsafe>();
     psyqo::GTE::clear<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>();
 
-    //projection plane distance (todo: play around with this)
+    //projection plane distance (basically kinda the FOV)
     psyqo::GTE::write<psyqo::GTE::Register::H, psyqo::GTE::Unsafe>(240);
 
     //specify scaling for Z averaging on the GTE
-    psyqo::GTE::write<psyqo::GTE::Register::ZSF3, psyqo::GTE::Unsafe>(OT_SIZE / 3);
-    psyqo::GTE::write<psyqo::GTE::Register::ZSF4, psyqo::GTE::Unsafe>(OT_SIZE / 4);
+    psyqo::GTE::write<psyqo::GTE::Register::ZSF3, psyqo::GTE::Unsafe>(mi::gpu::OT_SIZE / 3);
+    psyqo::GTE::write<psyqo::GTE::Register::ZSF4, psyqo::GTE::Unsafe>(mi::gpu::OT_SIZE / 4);
 
     pushScene(m_currentScene = new mi::Scenes::Geidontei(*this));
 }

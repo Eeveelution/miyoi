@@ -12,13 +12,13 @@
 
 namespace mi::gte {
     /// loads pseudoregisters V0 to V3 with these vectors.
-    void setInputVertices(const psyqo::Vec3& v0, const psyqo::Vec3& v1, const psyqo::Vec3& v2) {
+    inline void setInputVertices(const psyqo::Vec3& v0, const psyqo::Vec3& v1, const psyqo::Vec3& v2) {
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V0>( v0 );
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V1>( v1 );
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V2>( v2 );
     }
 
-    void setCameraObjectMatricies(const mi::math::Camera& cam, const mi::math::Object& obj, bool setRotation) {
+    inline void setCameraObjectMatricies(const mi::math::Camera& cam, const mi::math::Object& obj, bool setRotation) {
         if(setRotation) {
             //do `view * model`
             psyqo::Matrix33 viewModelMatrix;

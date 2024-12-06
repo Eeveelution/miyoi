@@ -6,6 +6,7 @@
 #include "psyqo/primitives/common.hh"
 #include "psyqo/vector.hh"
 
+#include "src/gpu/Rendering.hpp"
 #include "src/gte/GteShortcuts.hpp"
 #include "src/math/Common.hpp"
 #include "src/math/Camera.hpp"
@@ -20,7 +21,7 @@ using namespace psyqo::trig_literals;
 mi::Scenes::Geidontei::Geidontei(GameBase& game) 
     : _game(game)
 {
-    m_cubeObj.position = { 0.0, 0.0, 0.5 };
+    m_cubeObj.position = { 0.0, 0.0, 1.0 };
     m_Camera.position = { 0.0, 0.0, 0.0 };
 }
 
@@ -37,7 +38,7 @@ void mi::Scenes::Geidontei::frame() {
 void mi::Scenes::Geidontei::update() {
     mi::math::Rotation fp{};
 
-    fp.y = 0.0005; 
+    fp.y = 0.00025; 
     fp.y *= gpu().getFrameCount();
 
     m_cubeObj.rotation = { m_currentAngle, m_currentAngle };
@@ -57,6 +58,8 @@ void mi::Scenes::Geidontei::render() {
     auto& ot = _game.getOrderingTable();
     auto& pb = _game.getPrimBuffer();
 
+    pb.reset();
+
     int parity = gpu().getParity();
 
     auto& currentClear = m_clearFragment[parity];
@@ -64,25 +67,27 @@ void mi::Scenes::Geidontei::render() {
     gpu().getNextClear(currentClear.primitive, m_clearColor);
     gpu().chain(currentClear);
 
-    static constexpr psyqo::Vec3 cubeVerts[8] = {
+    static constexpr psyqo::Vec3 cubeVerts[] = {
         { .x = -0.05, .y = -0.05, .z = -0.05 }, { .x =  0.05, .y = -0.05, .z = -0.05 },  
         { .x = -0.05, .y =  0.05, .z = -0.05 }, { .x =  0.05, .y =  0.05, .z = -0.05 }, 
         { .x = -0.05, .y = -0.05, .z =  0.05 }, { .x =  0.05, .y = -0.05, .z =  0.05 },
         { .x = -0.05, .y =  0.05, .z =  0.05 }, { .x =  0.05, .y =  0.05, .z =  0.05 },
     };
 
-    static constexpr struct Face cubeFaces[6] = {
-        { .vertices = {0, 1, 2, 3}, .color = {0,   0,   255 }}, 
-        { .vertices = {6, 7, 4, 5}, .color = {0,   255, 0   }},
-        { .vertices = {4, 5, 0, 1}, .color = {0,   255, 255 }}, 
-        { .vertices = {7, 6, 3, 2}, .color = {255, 0,   0   }},
-        { .vertices = {6, 4, 2, 0}, .color = {255, 0,   255 }}, 
-        { .vertices = {5, 7, 1, 3}, .color = {255, 255, 0   }}
+    constexpr mi::gpu::IndexedColoredQuadFace cubeFaces[] = {
+        { .vertexIndicies = {0, 1, 2, 3}, .color = {0,   0,   255 }}, 
+        { .vertexIndicies = {6, 7, 4, 5}, .color = {0,   255, 0   }},
+        { .vertexIndicies = {4, 5, 0, 1}, .color = {0,   255, 255 }}, 
+        { .vertexIndicies = {7, 6, 3, 2}, .color = {255, 0,   0   }},
+        { .vertexIndicies = {6, 4, 2, 0}, .color = {255, 0,   255 }}, 
+        { .vertexIndicies = {5, 7, 1, 3}, .color = {255, 255, 0   }}
     };
 
     mi::gte::setCameraObjectMatricies(m_Camera, m_cubeObj, true);
+    mi::gpu::drawIndexedColoredQuads(ot, pb, cubeFaces, 6, cubeVerts);
 
     //place to store our transformed vertices
+    /*
     eastl::array<psyqo::Vertex, 4> projectedVerts;
 
     for(int i = 0; i < 6; i++) {
@@ -149,6 +154,8 @@ void mi::Scenes::Geidontei::render() {
 
         ot.insert(currentQuad, zIndex);
     }
+    */
 
+    //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
 }
