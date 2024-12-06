@@ -28,13 +28,16 @@ struct Face {
 };
 
 void mi::Scenes::Geidontei::frame() {
+    this->update();
+    this->render();
+
     mi::math::Rotation fp{};
 
-    // fp.x = 1; 
-    // fp.x *= gpu().getFrameCount();
+    fp.y = 0.0005; 
+    fp.y *= gpu().getFrameCount();
 
     m_Camera.position = {0.25, 0.0, 0.0};
-    // m_Camera.rotation = fp;
+    m_Camera.rotation = fp;
 
     m_Camera.viewRotationMtx = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.y, psyqo::SoftMath::Axis::Y, mi::math::TrigTable);
     const auto xRot = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.x, psyqo::SoftMath::Axis::X, mi::math::TrigTable);
@@ -126,15 +129,15 @@ void mi::Scenes::Geidontei::frame() {
         psyqo::GTE::Kernels::rtpt();
 
         //check winding to see if we can skip drawing this face
-        psyqo::GTE::Kernels::nclip();
+        // psyqo::GTE::Kernels::nclip();
 
-        uint32_t nClipResult;
-        psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
+        // uint32_t nClipResult;
+        // psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
 
         //face isn't facing us, can skip
-        if(nClipResult <= 0) {
+        // if(nClipResult <= 0) {
             // continue;
-        }
+        // }
 
         //so, the GTE can only work on 3 vertices at a time, a quad has 4
         //so we first save the first vertex, then we can load the 4th one in its place
@@ -181,4 +184,12 @@ void mi::Scenes::Geidontei::frame() {
     gpu().chain(ot);
 
     m_currentAngle += 0.005_pi;
+}
+
+void mi::Scenes::Geidontei::update() {
+
+}
+
+void mi::Scenes::Geidontei::render() {
+    
 }

@@ -37,6 +37,9 @@ namespace mi {
             Geidontei(GameBase& game);
 
             void frame() override;
+        private:
+            void render();
+            void update();
         };
     }
 }
