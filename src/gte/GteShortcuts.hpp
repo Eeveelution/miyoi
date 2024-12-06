@@ -5,45 +5,34 @@
 #include "psyqo/soft-math.hh"
 #include "psyqo/trigonometry.hh"
 #include "psyqo/vector.hh"
-#include "src/gte/GteMath.hpp"
+
 #include "src/math/Common.hpp"
+#include "src/math/Camera.hpp"
+#include "src/math/Object.hpp"
 
 namespace mi::gte {
     /// loads pseudoregisters V0 to V3 with these vectors.
-    inline void setInputVertices(const psyqo::Vec3& v0, const psyqo::Vec3& v1, const psyqo::Vec3& v2) {
+    void setInputVertices(const psyqo::Vec3& v0, const psyqo::Vec3& v1, const psyqo::Vec3& v2) {
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V0>( v0 );
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V1>( v1 );
         psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::V2>( v2 );
     }
 
-    inline void setPerspectiveCameraObjectMatricies(const psyqo::Trig<>& trig, const psyqo::Vec3& camPos, const psyqo::Matrix33& camPosRotMtx, const psyqo::Vec3& objectPos, const mi::math::Rotation& objectRot, bool setViewRot = true) {
-        if(objectRot.x == 0.0 && objectRot.y == 0 && setViewRot) {
-            //don't need to combine the camera rotation and object rotation
-            psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::Rotation>(camPosRotMtx);
-        } else {
-            auto objectRotationMtx = psyqo::SoftMath::generateRotationMatrix33(objectRot.y, psyqo::SoftMath::Axis::Y, trig);
+    void setCameraObjectMatricies(const mi::math::Camera& cam, const mi::math::Object& obj, bool setRotation) {
+        if(setRotation) {
+            //do `view * model`
+            psyqo::Matrix33 viewModelMatrix;
 
-            if(objectRot.x != 0.0) {
-                auto pitchRotMtx = psyqo::SoftMath::generateRotationMatrix33(objectRot.x, psyqo::SoftMath::Axis::X, trig);
+            mi::gte::multiplyMatrix33<
+                psyqo::GTE::PseudoRegister::Rotation,
+                psyqo::GTE::PseudoRegister::V0>(cam.viewRotationMtx, obj.worldMatrix, &viewModelMatrix);
 
-                mi::gte::multiplyMatrix33<
-                    psyqo::GTE::PseudoRegister::Rotation, 
-                    psyqo::GTE::PseudoRegister::V0>
-                (
-                    objectRotationMtx, 
-                    &objectRotationMtx
-                );
-            }
-
-            //combine with camera position and rotation
-            mi::gte::multiplyMatrix33<psyqo::GTE::PseudoRegister::Rotation, psyqo::GTE::PseudoRegister::V0>(camPosRotMtx, objectRotationMtx, &objectRotationMtx);
-
-            psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::Rotation>(objectRotationMtx);
+            psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::Rotation>(viewModelMatrix);
         }
 
-        auto camPosSpace = objectPos - camPos;
-        psyqo::SoftMath::matrixVecMul3(camPosRotMtx, camPosSpace, &camPosSpace);
+        auto posCamSpace = obj.position - cam.position;
 
-        psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::Translation>(camPosSpace);
+        psyqo::SoftMath::matrixVecMul3(cam.viewRotationMtx, posCamSpace, &posCamSpace);
+        psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::Translation>(posCamSpace);
     }
 }

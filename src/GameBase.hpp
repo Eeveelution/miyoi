@@ -11,8 +11,6 @@ class GameBase final : public psyqo::Application {
 public:
     static constexpr int OT_SIZE = 1024;
     static constexpr int PRIMBUFFLEN = 1000;
-
-    psyqo::Trig<> m_Trig;
 private:
     psyqo::Font<> m_Font;
     psyqo::Scene* m_currentScene;

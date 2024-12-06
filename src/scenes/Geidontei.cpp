@@ -9,6 +9,7 @@
 #include "src/gte/GteShortcuts.hpp"
 #include "src/math/Common.hpp"
 #include "src/math/Camera.hpp"
+#include "src/math/Object.hpp"
 
 #include <psyqo/font.hh>
 #include <psyqo/soft-math.hh>
@@ -27,11 +28,16 @@ struct Face {
 };
 
 void mi::Scenes::Geidontei::frame() {
-    m_Camera.position = {0.5, 0.0, 0.0};
-    m_Camera.rotation = {0, 0};
+    mi::math::Rotation fp{};
 
-    m_Camera.viewRotationMtx = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.y, psyqo::SoftMath::Axis::Y, _game.m_Trig);
-    const auto xRot = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.x, psyqo::SoftMath::Axis::X, _game.m_Trig);
+    // fp.x = 1; 
+    // fp.x *= gpu().getFrameCount();
+
+    m_Camera.position = {0.25, 0.0, 0.0};
+    // m_Camera.rotation = fp;
+
+    m_Camera.viewRotationMtx = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.y, psyqo::SoftMath::Axis::Y, mi::math::TrigTable);
+    const auto xRot = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.x, psyqo::SoftMath::Axis::X, mi::math::TrigTable);
 
     psyqo::SoftMath::multiplyMatrix33(m_Camera.viewRotationMtx, xRot, &m_Camera.viewRotationMtx);
 
@@ -69,27 +75,40 @@ void mi::Scenes::Geidontei::frame() {
     // psyqo::GTE::write<psyqo::GTE::Register::TRY, psyqo::GTE::Unsafe>(1);
     // psyqo::GTE::write<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>(1024);
 
-    auto transform = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::X, _game.m_Trig);
-    auto rot = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::Y, _game.m_Trig);
+    //model matrix
+    // auto transform = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::X, mi::math::TrigTable);
+    // auto rot = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::Y, mi::math::TrigTable);
 
-    psyqo::SoftMath::multiplyMatrix33(transform, rot, &transform);
+    //apply camera
+    // psyqo::SoftMath::multiplyMatrix33(transform, m_Camera.viewRotationMtx, &transform);
+    //apply object transform
+    // psyqo::SoftMath::multiplyMatrix33(transform, rot, &transform);
 
-    psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Rotation>(transform);
+    // psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Rotation>(transform);
 
-        //CAMERA POS
-    psyqo::FixedPoint<> fp = 1;
-    fp *= gpu().getFrameCount();
+    //CAMERA POS
 
-    auto objPos = psyqo::Vec3{0.00, 0.01, 1};
+    // auto objPos = psyqo::Vec3{0.00, 0.01, 1};
 
-    auto diffCamPosToObj= objPos - m_Camera.position;
+    // auto diffCamPosToObj= objPos - m_Camera.position;
 
-    auto test = objPos.z - m_Camera.position.z;
-    auto test2 = test.integer();
+    // auto test = objPos.z - m_Camera.position.z;
+    // auto test2 = test.integer();
 
-    psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Translation>(diffCamPosToObj);
+    // psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Translation>(diffCamPosToObj);
+
+    // mi::gte::setPerspectiveCameraObjectMatricies(_game.m_Trig, m_Camera.position, m_Camera.viewRotationMtx, objPos, mi::math::Rotation());
 
     //END CAMERA POS
+
+    mi::math::Object cube = {
+        .position = {0, 0, 1},
+        .rotation = {m_currentAngle , m_currentAngle},
+    };
+
+    cube.recalculateWorldMatrix();
+
+    mi::gte::setCameraObjectMatricies(m_Camera, cube, true);
 
     //place to store our transformed vertices
     eastl::array<psyqo::Vertex, 4> projectedVerts;
@@ -114,7 +133,7 @@ void mi::Scenes::Geidontei::frame() {
 
         //face isn't facing us, can skip
         if(nClipResult <= 0) {
-            //continue;
+            // continue;
         }
 
         //so, the GTE can only work on 3 vertices at a time, a quad has 4
