@@ -14,6 +14,7 @@
 #include "psyqo/primitives/quads.hh"
 #include "psyqo/trigonometry.hh"
 #include "src/math/Camera.hpp"
+#include "src/math/Object.hpp"
 
 namespace mi {
     namespace Scenes {
@@ -33,12 +34,14 @@ namespace mi {
             psyqo::Angle m_currentAngle;
 
             mi::math::Camera m_Camera{};
+            mi::math::Object m_cubeObj;
         public:
             Geidontei(GameBase& game);
 
             void frame() override;
         private:
             void render();
+            void inputHandling();
             void update();
         };
     }

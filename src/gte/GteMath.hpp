@@ -14,7 +14,7 @@ namespace mi::gte {
         } else if constexpr (reg == psyqo::GTE::PseudoRegister::Color) {
             return psyqo::GTE::Kernels::MX::LC;
         } else {
-            static_assert(false, "Not a matrix pseudo register (should be Rotation, Light or Color)");
+            //static_assert(false, "Not a matrix pseudo register (should be Rotation, Light or Color)");
         }
     }
 
@@ -28,7 +28,7 @@ namespace mi::gte {
         } else if constexpr (reg == psyqo::GTE::PseudoRegister::V2) {
             return psyqo::GTE::Kernels::MV::V2;
         } else {
-            static_assert(false, "Not a valid pseudo register (should be V0, V1 or V2)");
+            //static_assert(false, "Not a valid pseudo register (should be V0, V1 or V2)");
         }
     }
     template<psyqo::GTE::PseudoRegister mreg, psyqo::GTE::PseudoRegister vreg>

@@ -20,6 +20,8 @@ using namespace psyqo::trig_literals;
 mi::Scenes::Geidontei::Geidontei(GameBase& game) 
     : _game(game)
 {
+    m_cubeObj.position = { 0.0, 0.0, 0.5 };
+    m_Camera.position = { 0.0, 0.0, 0.0 };
 }
 
 struct Face {
@@ -30,24 +32,28 @@ struct Face {
 void mi::Scenes::Geidontei::frame() {
     this->update();
     this->render();
+}
 
+void mi::Scenes::Geidontei::update() {
     mi::math::Rotation fp{};
 
     fp.y = 0.0005; 
     fp.y *= gpu().getFrameCount();
 
-    m_Camera.position = {0.25, 0.0, 0.0};
+    m_cubeObj.rotation = { m_currentAngle, m_currentAngle };
+    m_cubeObj.recalculateWorldMatrix();
+
     m_Camera.rotation = fp;
+    m_Camera.recalculateViewRotationMatrix();
 
-    m_Camera.viewRotationMtx = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.y, psyqo::SoftMath::Axis::Y, mi::math::TrigTable);
-    const auto xRot = psyqo::SoftMath::generateRotationMatrix33(m_Camera.rotation.x, psyqo::SoftMath::Axis::X, mi::math::TrigTable);
+    m_currentAngle += 0.005_pi;
+}
 
-    psyqo::SoftMath::multiplyMatrix33(m_Camera.viewRotationMtx, xRot, &m_Camera.viewRotationMtx);
+void mi::Scenes::Geidontei::inputHandling() {
 
-    // _game
-    //     .getSystemFont()
-    //     .print(gpu(), "Hello World!", {{.x = 16, .y = 32}}, c);
+}
 
+void mi::Scenes::Geidontei::render() {
     auto& ot = _game.getOrderingTable();
     auto& pb = _game.getPrimBuffer();
 
@@ -59,59 +65,22 @@ void mi::Scenes::Geidontei::frame() {
     gpu().chain(currentClear);
 
     static constexpr psyqo::Vec3 cubeVerts[8] = {
-        {.x = -0.05, .y = -0.05, .z = -0.05}, {.x =  0.05, .y = -0.05, .z = -0.05},  {.x = -0.05, .y =  0.05, .z = -0.05},
-        {.x =  0.05, .y =  0.05, .z = -0.05}, {.x = -0.05, .y = -0.05, .z =  0.05},  {.x =  0.05, .y = -0.05, .z =  0.05},
-        {.x = -0.05, .y =  0.05, .z =  0.05}, {.x =  0.05, .y =  0.05, .z =  0.05},
+        { .x = -0.05, .y = -0.05, .z = -0.05 }, { .x =  0.05, .y = -0.05, .z = -0.05 },  
+        { .x = -0.05, .y =  0.05, .z = -0.05 }, { .x =  0.05, .y =  0.05, .z = -0.05 }, 
+        { .x = -0.05, .y = -0.05, .z =  0.05 }, { .x =  0.05, .y = -0.05, .z =  0.05 },
+        { .x = -0.05, .y =  0.05, .z =  0.05 }, { .x =  0.05, .y =  0.05, .z =  0.05 },
     };
 
     static constexpr struct Face cubeFaces[6] = {
-        {.vertices = {0, 1, 2, 3}, .color = {0,   0,   255}}, 
-        {.vertices = {6, 7, 4, 5}, .color = {0,   255, 0}},
-        {.vertices = {4, 5, 0, 1}, .color = {0,   255, 255}}, 
-        {.vertices = {7, 6, 3, 2}, .color = {255, 0,   0}},
-        {.vertices = {6, 4, 2, 0}, .color = {255, 0,   255}}, 
-        {.vertices = {5, 7, 1, 3}, .color = {255, 255, 0}}
+        { .vertices = {0, 1, 2, 3}, .color = {0,   0,   255 }}, 
+        { .vertices = {6, 7, 4, 5}, .color = {0,   255, 0   }},
+        { .vertices = {4, 5, 0, 1}, .color = {0,   255, 255 }}, 
+        { .vertices = {7, 6, 3, 2}, .color = {255, 0,   0   }},
+        { .vertices = {6, 4, 2, 0}, .color = {255, 0,   255 }}, 
+        { .vertices = {5, 7, 1, 3}, .color = {255, 255, 0   }}
     };
 
-    //translate the cube 512 to the Z axis
-    // psyqo::GTE::write<psyqo::GTE::Register::TRX, psyqo::GTE::Unsafe>(1);
-    // psyqo::GTE::write<psyqo::GTE::Register::TRY, psyqo::GTE::Unsafe>(1);
-    // psyqo::GTE::write<psyqo::GTE::Register::TRZ, psyqo::GTE::Unsafe>(1024);
-
-    //model matrix
-    // auto transform = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::X, mi::math::TrigTable);
-    // auto rot = psyqo::SoftMath::generateRotationMatrix33(m_currentAngle, psyqo::SoftMath::Axis::Y, mi::math::TrigTable);
-
-    //apply camera
-    // psyqo::SoftMath::multiplyMatrix33(transform, m_Camera.viewRotationMtx, &transform);
-    //apply object transform
-    // psyqo::SoftMath::multiplyMatrix33(transform, rot, &transform);
-
-    // psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Rotation>(transform);
-
-    //CAMERA POS
-
-    // auto objPos = psyqo::Vec3{0.00, 0.01, 1};
-
-    // auto diffCamPosToObj= objPos - m_Camera.position;
-
-    // auto test = objPos.z - m_Camera.position.z;
-    // auto test2 = test.integer();
-
-    // psyqo::GTE::writeUnsafe<psyqo::GTE::PseudoRegister::Translation>(diffCamPosToObj);
-
-    // mi::gte::setPerspectiveCameraObjectMatricies(_game.m_Trig, m_Camera.position, m_Camera.viewRotationMtx, objPos, mi::math::Rotation());
-
-    //END CAMERA POS
-
-    mi::math::Object cube = {
-        .position = {0, 0, 1},
-        .rotation = {m_currentAngle , m_currentAngle},
-    };
-
-    cube.recalculateWorldMatrix();
-
-    mi::gte::setCameraObjectMatricies(m_Camera, cube, true);
+    mi::gte::setCameraObjectMatricies(m_Camera, m_cubeObj, true);
 
     //place to store our transformed vertices
     eastl::array<psyqo::Vertex, 4> projectedVerts;
@@ -129,15 +98,15 @@ void mi::Scenes::Geidontei::frame() {
         psyqo::GTE::Kernels::rtpt();
 
         //check winding to see if we can skip drawing this face
-        // psyqo::GTE::Kernels::nclip();
+        psyqo::GTE::Kernels::nclip();
 
-        // uint32_t nClipResult;
-        // psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
+        uint32_t nClipResult;
+        psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
 
         //face isn't facing us, can skip
-        // if(nClipResult <= 0) {
-            // continue;
-        // }
+        if(nClipResult <= 0) {
+            continue;
+        }
 
         //so, the GTE can only work on 3 vertices at a time, a quad has 4
         //so we first save the first vertex, then we can load the 4th one in its place
@@ -182,14 +151,4 @@ void mi::Scenes::Geidontei::frame() {
     }
 
     gpu().chain(ot);
-
-    m_currentAngle += 0.005_pi;
-}
-
-void mi::Scenes::Geidontei::update() {
-
-}
-
-void mi::Scenes::Geidontei::render() {
-    
 }
