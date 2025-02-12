@@ -26,6 +26,10 @@ void Bullet::draw(psyqo::GPU &gpu) {
     sprite.size = {{ .x = 8, .y = 8 }};
     sprite.texInfo = { .u = 0, .v = 0 };
     sprite.setSemiTrans();
-    
+
     gpu.sendPrimitive(sprite);
+}
+
+void Bullet::update() {
+    position += velocity;
 }

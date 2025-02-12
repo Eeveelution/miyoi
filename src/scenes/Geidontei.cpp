@@ -78,7 +78,7 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     m_playerPosition = { .x = 200, .y = 200 };
 
     Bullet bullet{
-        .position = { .x = 64, .y = 64 },
+        .position = { .x = 128, .y = 128 },
         .velocity = { .x = 1, .y = 1 }
     };
     m_bullets.push_back(bullet);
@@ -149,6 +149,10 @@ void mi::Scenes::Geidontei::update() {
     }
     if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Down)) {
         m_playerPosition.y += speed;
+    }
+
+    for(int i = 0; i != m_bullets.size(); i++) {
+        m_bullets[i].update();
     }
 }
 
@@ -245,7 +249,11 @@ void mi::Scenes::Geidontei::render() {
         .velocity = { .x = 1, .y = 1}
     };
 
-    bullet.draw(gpu());
+    // bullet.draw(gpu());
+
+    for(int i = 0; i != m_bullets.size(); i++) {
+        m_bullets[i].draw(gpu());
+    }
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
