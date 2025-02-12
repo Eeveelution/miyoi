@@ -32,6 +32,8 @@
 #include "../resources/PELLET.h"
 #include "../resources/HITBOX.h"
 
+#include "../game/Bullet.hpp"
+
 using namespace psyqo::fixed_point_literals;
 using namespace psyqo::trig_literals;
 
@@ -190,7 +192,7 @@ void mi::Scenes::Geidontei::render() {
         pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::R1) 
     ) {
         psyqo::Vertex hitboxVertex{};
-        
+
         hitboxVertex.x = (m_playerPosition.x - 4).integer();
         hitboxVertex.y = (m_playerPosition.y - 4).integer();
 
@@ -208,6 +210,15 @@ void mi::Scenes::Geidontei::render() {
         gpu().sendPrimitive(tpage);
         gpu().sendPrimitive(sprite);
     }
+
+    Bullet::setupBulletDrawing(gpu());
+
+    Bullet bullet{
+        .position = { .x = 64, .y = 64 },
+        .velocity = { .x = 1, .y = 1}
+    };
+
+    bullet.draw(gpu());
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
