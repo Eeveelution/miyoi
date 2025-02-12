@@ -7,14 +7,17 @@
 
 #include "../GameBase.hpp"
 #include "EASTL/array.h"
+#include "psyqo/advancedpad.hh"
 #include "psyqo/fragment-concept.hh"
 #include "psyqo/fragments.hh"
 #include "psyqo/primitives/common.hh"
 #include "psyqo/primitives/misc.hh"
 #include "psyqo/primitives/quads.hh"
 #include "psyqo/trigonometry.hh"
+#include "psyqo/vector.hh"
 #include "src/math/Camera.hpp"
 #include "src/math/Object.hpp"
+
 
 namespace mi {
     namespace Scenes {
@@ -35,6 +38,9 @@ namespace mi {
 
             mi::math::Camera m_Camera{};
             mi::math::Object m_cubeObj;
+
+            psyqo::AdvancedPad pad;
+            psyqo::Vec2 m_playerPosition;
         public:
             Geidontei(GameBase& game);
 

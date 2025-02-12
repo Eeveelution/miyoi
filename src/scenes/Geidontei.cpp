@@ -33,44 +33,45 @@
 using namespace psyqo::fixed_point_literals;
 using namespace psyqo::trig_literals;
 
+void loadByteArrayTexture(psyqo::GPU& gpu, const uint8_t* data, size_t length, psyqo::Rect region) {
+    psyqo::Prim::VRAMUpload upload;
+    upload.region = region;
+
+    gpu.sendPrimitive(upload);
+
+    eastl::vector<uint8_t> asVector(data, data + length);
+
+    TimFile tim = readTimFile(asVector);
+
+    for(int i = 0; i != (tim.pixW * tim.pixH); i += 1) {
+        auto current = *( ((uint32_t*)tim.pixels.data()) + i);
+        
+        gpu.sendRaw(current);
+    }
+
+    psyqo::Prim::FlushCache fc;
+
+    gpu.sendPrimitive(fc);
+    gpu.waitReady();
+} 
+
 mi::Scenes::Geidontei::Geidontei(GameBase& game) 
     : _game(game)
 {
     m_cubeObj.position = { 0.0, 0.0, 1.0 };
     m_Camera.position = { 0.0, 0.0, 0.0 };
 
-    psyqo::Rect region = {.pos = {{.x = 512, .y = 0}}, .size = {{.w = 32, .h = 48}}};
-    psyqo::Prim::VRAMUpload upload;
-    upload.region = region;
+    psyqo::Rect mariRegion = {.pos = {{.x = 320, .y = 0}}, .size = {{.w = 32, .h = 48}}};
+    psyqo::Rect pelletRegion = {.pos = {{.x = 384, .y = 0}}, .size = {{.w = 8, .h = 8}}};
+    psyqo::Rect hitboxRegion = {.pos = {{.x = 448, .y = 0}}, .size = {{.w = 8, .h = 8}}};
 
-    gpu().sendPrimitive(upload);
+    loadByteArrayTexture(gpu(), BLACKMARI, 3096, mariRegion);
+    // loadByteArrayTexture(gpu(), PELLET, 152, pelletRegion);
+    // loadByteArrayTexture(gpu(), HITBOX, 152, hitboxRegion);
 
-    psyqo::Color color;
-    color.g = 255;
+    pad.initialize();
 
-    eastl::vector<uint8_t> data(BLACKMARI, BLACKMARI + sizeof BLACKMARI / sizeof BLACKMARI[0]);
-
-    TimFile tim = readTimFile(data);
-
-    for(int i = 0; i != (32 * 48); i += 1) {
-        auto current = *( ((uint32_t*)tim.pixels.data()) + i);
-        
-        // gpu().sendRaw(marisaImage[i]);
-        gpu().sendRaw(current);
-    }
-
-    // for(int x = 0; x != 64; x++) {
-    //     for(int y = 0; y != 64; y++) {
-    //         if(x + y % 2 == 0) {
-    //             gpu().sendRaw(0xFF0000FF);
-    //         } else {
-    //             gpu().sendRaw(0x000000FF);
-    //         }
-    //     }
-    // }
-
-    psyqo::Prim::FlushCache fc;
-    gpu().sendPrimitive(fc);
+    m_playerPosition = { .x = 200, .y = 200 };
 }
 
 struct Face {
@@ -96,6 +97,28 @@ void mi::Scenes::Geidontei::update() {
     m_Camera.recalculateViewRotationMatrix();
 
     m_currentAngle += 0.005_pi;
+
+    uint32_t speed = 2;
+
+    if(
+        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::L1) ||
+        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::R1) 
+    ) {
+        speed = 1;
+    }
+
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Left)) {
+        m_playerPosition.x -= speed;
+    }
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Right)) {
+        m_playerPosition.x += speed;
+    }
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Up)) {
+        m_playerPosition.y -= speed;
+    }
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Down)) {
+        m_playerPosition.y += speed;
+    }
 }
 
 void mi::Scenes::Geidontei::inputHandling() {
@@ -136,100 +159,29 @@ void mi::Scenes::Geidontei::render() {
 
     psyqo::Prim::TPage tpage;
 
-    tpage.attr.setPageX(8).setPageY(0).set(psyqo::Prim::TPageAttr::Tex16Bits).set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront).enableDisplayArea();
+    tpage.attr
+        .setPageX(5)
+        .setPageY(0)
+        .set(psyqo::Prim::TPageAttr::Tex16Bits)
+        .set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront)
+        .enableDisplayArea();
+        
     gpu().sendPrimitive(tpage);
 
     psyqo::Prim::Sprite sprite {};
 
-    sprite.position = {{ .x = 0, .y = 0 }};
+    psyqo::Vertex playerVertex{};
+
+    playerVertex.x = (m_playerPosition.x - (MARI_SIZE_W / 2)).integer();
+    playerVertex.y = (m_playerPosition.y - (MARI_SIZE_H / 2)).integer();
+
+    sprite.position = playerVertex;
+
     sprite.size = {{ .x = 32, .y = 48 }};
     sprite.texInfo = { .u = 0, .v = 0 };
     sprite.setSemiTrans();
 
     gpu().sendPrimitive(sprite);
-    
-
-    // auto& quad = pb.allocateFragment<psyqo::Prim::Quad>();
-
-    // quad.primitive
-    //     .setPointA(psyqo::Vertex{.x = 0, .y = 0})
-    //     .setPointB(psyqo::Vertex{.x = 50, .y = 0})
-    //     .setPointC(psyqo::Vertex{.x = 0, .y = 50})
-    //     .setPointD(psyqo::Vertex{.x = 50, .y = 50})
-    //     .setColor(psyqo::Color{.r = 255, .g = 128})
-    //     .setOpaque();
-
-    // ot.insert(quad, 0);
-
-    //place to store our transformed vertices
-    /*
-    eastl::array<psyqo::Vertex, 4> projectedVerts;
-
-    for(int i = 0; i < 6; i++) {
-        const auto currentFace = cubeFaces[i];
-        //Load vertices into GTE
-        mi::gte::setInputVertices(
-            cubeVerts[currentFace.vertices[0]], 
-            cubeVerts[currentFace.vertices[1]], 
-            cubeVerts[currentFace.vertices[2]]
-        );
-
-        //use the matricies loaded into the GTE (translation, rotation, etc.) to do perspective transformation
-        psyqo::GTE::Kernels::rtpt();
-
-        //check winding to see if we can skip drawing this face
-        psyqo::GTE::Kernels::nclip();
-
-        uint32_t nClipResult;
-        psyqo::GTE::read<psyqo::GTE::Register::MAC0>(&nClipResult);
-
-        //face isn't facing us, can skip
-        if(nClipResult <= 0) {
-            continue;
-        }
-
-        //so, the GTE can only work on 3 vertices at a time, a quad has 4
-        //so we first save the first vertex, then we can load the 4th one in its place
-        //and project a single vertex.
-        psyqo::GTE::read<psyqo::GTE::Register::SXY0>(&projectedVerts[0].packed);
-
-        //load in last vertex
-        psyqo::GTE::writeSafe<psyqo::GTE::PseudoRegister::V0>( cubeVerts[currentFace.vertices[3]] );
-
-        //perform perspective transformation on single vertex
-        //fun fact, this takes in V0 and returns into Registers::SXY2 /shrug
-        psyqo::GTE::Kernels::rtps();
-
-        //get the average Z, to put into our ordering table
-        psyqo::GTE::Kernels::avsz4();
-
-        uint32_t zIndex;
-        psyqo::GTE::read<psyqo::GTE::Register::OTZ>(&zIndex);
-
-        //make sure the Z index can fit into our ordering table
-        //if not (i.e this returns true) skip drawing this face
-        if(zIndex < 0 || zIndex >= GameBase::OT_SIZE) {
-            continue;
-        }
-
-        //read remaining vertices
-        psyqo::GTE::read<psyqo::GTE::Register::SXY0>(&projectedVerts[1].packed);
-        psyqo::GTE::read<psyqo::GTE::Register::SXY1>(&projectedVerts[2].packed);
-        psyqo::GTE::read<psyqo::GTE::Register::SXY2>(&projectedVerts[3].packed);
-
-        auto& currentQuad = m_quadFragments[i];
-
-        currentQuad.primitive.setPointA(projectedVerts[0]);
-        currentQuad.primitive.setPointB(projectedVerts[1]);
-        currentQuad.primitive.setPointC(projectedVerts[2]);
-        currentQuad.primitive.setPointD(projectedVerts[3]);
-
-        currentQuad.primitive.setColor(currentFace.color);
-        currentQuad.primitive.setOpaque();
-
-        ot.insert(currentQuad, zIndex);
-    }
-    */
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
