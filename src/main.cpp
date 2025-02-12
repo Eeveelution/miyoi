@@ -3,5 +3,5 @@
 GameBase game;
 
 int main() { 
-a    return game.run(); 
+    return game.run(); 
 }
