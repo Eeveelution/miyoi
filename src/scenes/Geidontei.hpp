@@ -28,7 +28,7 @@ namespace mi {
             GameBase& _game; 
 
             psyqo::Fragments::SimpleFragment<psyqo::Prim::FastFill> m_clearFragment[2];
-            psyqo::Color m_clearColor = { .r = 0, .g = 0, .b = 0 };
+            psyqo::Color m_clearColor = { .r = 255, .g = 0, .b = 0 };
 
             eastl::array< psyqo::Fragments::SimpleFragment<psyqo::Prim::Quad>, 6 > m_quadFragments;
             psyqo::Angle m_currentAngle;

@@ -1,9 +1,12 @@
 #include "Geidontei.hpp"
 #include "EASTL/array.h"
+#include "EASTL/vector.h"
 #include "psyqo/fixed-point.hh"
 #include "psyqo/gte-kernels.hh"
 #include "psyqo/gte-registers.hh"
 #include "psyqo/primitives/common.hh"
+#include "psyqo/primitives/control.hh"
+#include "psyqo/primitives/sprites.hh"
 #include "psyqo/vector.hh"
 
 #include "src/gpu/Rendering.hpp"
@@ -12,8 +15,20 @@
 #include "src/math/Camera.hpp"
 #include "src/math/Object.hpp"
 
+
 #include <psyqo/font.hh>
 #include <psyqo/soft-math.hh>
+
+#include "Marisa.h"
+
+
+
+// #include <EASTL/ctype.h>
+#include <EASTL/memory.h>
+// #include <EASTL/stdint.h>
+#include <EASTL/string.h>
+
+#include "../resources/TimFile.h"
 
 using namespace psyqo::fixed_point_literals;
 using namespace psyqo::trig_literals;
@@ -23,6 +38,39 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 {
     m_cubeObj.position = { 0.0, 0.0, 1.0 };
     m_Camera.position = { 0.0, 0.0, 0.0 };
+
+    psyqo::Rect region = {.pos = {{.x = 512, .y = 0}}, .size = {{.w = 32, .h = 48}}};
+    psyqo::Prim::VRAMUpload upload;
+    upload.region = region;
+
+    gpu().sendPrimitive(upload);
+
+    psyqo::Color color;
+    color.g = 255;
+
+    eastl::vector<uint8_t> data(BLACKMARI, BLACKMARI + sizeof BLACKMARI / sizeof BLACKMARI[0]);
+
+    TimFile tim = readTimFile(data);
+
+    for(int i = 0; i != (32 * 48); i += 1) {
+        auto current = *( ((uint32_t*)tim.pixels.data()) + i);
+        
+        // gpu().sendRaw(marisaImage[i]);
+        gpu().sendRaw(current);
+    }
+
+    // for(int x = 0; x != 64; x++) {
+    //     for(int y = 0; y != 64; y++) {
+    //         if(x + y % 2 == 0) {
+    //             gpu().sendRaw(0xFF0000FF);
+    //         } else {
+    //             gpu().sendRaw(0x000000FF);
+    //         }
+    //     }
+    // }
+
+    psyqo::Prim::FlushCache fc;
+    gpu().sendPrimitive(fc);
 }
 
 struct Face {
@@ -83,8 +131,35 @@ void mi::Scenes::Geidontei::render() {
         { .vertexIndicies = {5, 7, 1, 3}, .color = {255, 255, 0   }}
     };
 
-    mi::gte::setCameraObjectMatricies(m_Camera, m_cubeObj, true);
-    mi::gpu::drawIndexedColoredQuads(ot, pb, cubeFaces, 6, cubeVerts);
+    //mi::gte::setCameraObjectMatricies(m_Camera, m_cubeObj, true);
+    //mi::gpu::drawIndexedColoredQuads(ot, pb, cubeFaces, 6, cubeVerts);
+
+    psyqo::Prim::TPage tpage;
+
+    tpage.attr.setPageX(8).setPageY(0).set(psyqo::Prim::TPageAttr::Tex16Bits).set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront).enableDisplayArea();
+    gpu().sendPrimitive(tpage);
+
+    psyqo::Prim::Sprite sprite {};
+
+    sprite.position = {{ .x = 0, .y = 0 }};
+    sprite.size = {{ .x = 32, .y = 48 }};
+    sprite.texInfo = { .u = 0, .v = 0 };
+    sprite.setSemiTrans();
+
+    gpu().sendPrimitive(sprite);
+    
+
+    // auto& quad = pb.allocateFragment<psyqo::Prim::Quad>();
+
+    // quad.primitive
+    //     .setPointA(psyqo::Vertex{.x = 0, .y = 0})
+    //     .setPointB(psyqo::Vertex{.x = 50, .y = 0})
+    //     .setPointC(psyqo::Vertex{.x = 0, .y = 50})
+    //     .setPointD(psyqo::Vertex{.x = 50, .y = 50})
+    //     .setColor(psyqo::Color{.r = 255, .g = 128})
+    //     .setOpaque();
+
+    // ot.insert(quad, 0);
 
     //place to store our transformed vertices
     /*
