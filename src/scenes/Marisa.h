@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Geidontei.hpp"
-#include "EASTL/array.h"
 #include "psyqo/fixed-point.hh"
 #include "psyqo/gte-kernels.hh"
 #include "psyqo/gte-registers.hh"
