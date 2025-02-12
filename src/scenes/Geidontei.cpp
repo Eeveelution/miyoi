@@ -29,6 +29,8 @@
 #include <EASTL/string.h>
 
 #include "../resources/TimFile.h"
+#include "../resources/PELLET.h"
+#include "../resources/HITBOX.h"
 
 using namespace psyqo::fixed_point_literals;
 using namespace psyqo::trig_literals;
@@ -66,8 +68,8 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     psyqo::Rect hitboxRegion = {.pos = {{.x = 448, .y = 0}}, .size = {{.w = 8, .h = 8}}};
 
     loadByteArrayTexture(gpu(), BLACKMARI, 3096, mariRegion);
-    // loadByteArrayTexture(gpu(), PELLET, 152, pelletRegion);
-    // loadByteArrayTexture(gpu(), HITBOX, 152, hitboxRegion);
+    loadByteArrayTexture(gpu(), PELLET, 152, pelletRegion);
+    loadByteArrayTexture(gpu(), HITBOX, 152, hitboxRegion);
 
     pad.initialize();
 
@@ -165,7 +167,7 @@ void mi::Scenes::Geidontei::render() {
         .set(psyqo::Prim::TPageAttr::Tex16Bits)
         .set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront)
         .enableDisplayArea();
-        
+
     gpu().sendPrimitive(tpage);
 
     psyqo::Prim::Sprite sprite {};
@@ -182,6 +184,30 @@ void mi::Scenes::Geidontei::render() {
     sprite.setSemiTrans();
 
     gpu().sendPrimitive(sprite);
+
+    if(
+        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::L1) ||
+        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::R1) 
+    ) {
+        psyqo::Vertex hitboxVertex{};
+        
+        hitboxVertex.x = (m_playerPosition.x - 4).integer();
+        hitboxVertex.y = (m_playerPosition.y - 4).integer();
+
+        sprite.position = hitboxVertex;
+        sprite.size = {{ .x = 8, .y = 8 }};
+        sprite.texInfo = { .u = 0, .v = 0 };
+
+        tpage.attr
+            .setPageX(7)
+            .setPageY(0)
+            .set(psyqo::Prim::TPageAttr::Tex16Bits)
+            .set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront)
+            .enableDisplayArea();
+        
+        gpu().sendPrimitive(tpage);
+        gpu().sendPrimitive(sprite);
+    }
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
