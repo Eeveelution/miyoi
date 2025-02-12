@@ -76,6 +76,33 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     pad.initialize();
 
     m_playerPosition = { .x = 200, .y = 200 };
+
+    Bullet bullet{
+        .position = { .x = 64, .y = 64 },
+        .velocity = { .x = 1, .y = 1 }
+    };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = 0, .y = 1 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = -1, .y = 1 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = -1, .y = 0 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = -1, .y = -1 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = 0, .y = -1 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = 1, .y = -1 };
+    m_bullets.push_back(bullet);
+
+    bullet.velocity = { .x = 1, .y = 0 };
+    m_bullets.push_back(bullet);
 }
 
 struct Face {
