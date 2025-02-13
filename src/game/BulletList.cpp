@@ -11,17 +11,30 @@ BulletList::BulletList() {
 }
 
 void BulletList::addBullet(const Bullet& newBullet) {
-    if (m_dead.empty()) return;
-    auto id = m_dead.back();
-    m_dead.pop_back();
-    m_bullets[id] = newBullet;
+    for(int i = 0; i < BULLET_LIST_SIZE; i++) {
+        if(!m_bullets[i].alive) {
+            m_bullets[i] = newBullet;
+            return;
+        }
+    }
+    // if (m_dead.empty()) return;
+    // auto id = m_dead.back();
+    // m_dead.pop_back();
+    // m_bullets[id] = newBullet;
 }
 
 void BulletList::addBullet(Bullet&& newBullet) {
-    if (m_dead.empty()) return;
-    auto id = m_dead.back();
-    m_dead.pop_back();
-    m_bullets[id] = eastl::move(newBullet);
+    // if (m_dead.empty()) return;
+    // auto id = m_dead.back();
+    // m_dead.pop_back();
+    // m_bullets[id] = eastl::move(newBullet);
+
+    for(int i = 0; i < BULLET_LIST_SIZE; i++) {
+        if(!m_bullets[i].alive) {
+            m_bullets[i] = newBullet;
+            return;
+        }
+    }
 }
 
 void BulletList::update() {

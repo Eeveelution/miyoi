@@ -9,6 +9,7 @@
 #include "psyqo/primitives/control.hh"
 #include "psyqo/primitives/quads.hh"
 #include "psyqo/primitives/sprites.hh"
+#include "psyqo/trigonometry.hh"
 #include "psyqo/vector.hh"
 
 #include "src/game/Enemy.hpp"
@@ -35,6 +36,7 @@
 #include "../resources/PELLET.H"
 #include "../resources/HITBOX.H"
 #include "../resources/BACKGROUND.H"
+#include "../resources/FAIRIES.H"
 
 #include "../game/Bullet.hpp"
 
@@ -74,11 +76,13 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     psyqo::Rect pelletRegion = {.pos = {{.x = 384, .y = 0}}, .size = {{.w = 8, .h = 8}}};
     psyqo::Rect hitboxRegion = {.pos = {{.x = 448, .y = 0}}, .size = {{.w = 8, .h = 8}}};
     psyqo::Rect bgRegion = {.pos = {{.x = 768, .y = 0}}, .size = {{.w = 256, .h = 256}}};
+    psyqo::Rect fairiesRegion = {.pos = {{.x = 320, .y = 256}}, .size = {{.w = 62, .h = 58}}};
 
     loadByteArrayTexture(gpu(), BLACKMARI, 3096, mariRegion);
     loadByteArrayTexture(gpu(), PELLET, 152, pelletRegion);
     loadByteArrayTexture(gpu(), HITBOX, 152, hitboxRegion);
     loadByteArrayTexture(gpu(), BACKGROUND, 131096, bgRegion);
+    loadByteArrayTexture(gpu(), FAIRIES, 7216, fairiesRegion);
 
     pad.initialize();
 
@@ -88,9 +92,10 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     const psyqo::FixedPoint<> unitVelocity = .25;
 
-    for(int i = 0; i != 360; i += 15) {
+    for(int i = 0; i != 360; i += 60) {
         Bullet bullet(psyqo::Vec2{0, 0}, 0, psyqo::Vec2{1, 1});
         bullet.rotation = psyqo::Angle(i, 0);
+        bullet.rotationChangeOverTime = psyqo::Angle(0, 75);
         allDirPattern.push_back(bullet);
     }
 
@@ -102,10 +107,10 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     //Stage creation
 
-    enemy = Enemy(psyqo::Vec2{.x = 64, .y = 64}, psyqo::Vec2{.x = .5, .y = 0}, 5, 0);
+    Enemy enemy = Enemy(psyqo::Vec2{.x = 64, .y = 64}, psyqo::Vec2{.x = .5, .y = 0}, 5, 1);
 
-    enemy.spriteSize.x = 32;
-    enemy.spriteSize.y = 48;
+    enemy.spriteSize.x = 30;
+    enemy.spriteSize.y = 30;
 
     auto pattern = ActionElement(60, allDirPattern);
     pattern.repeatEvery = 30;
@@ -116,9 +121,22 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     psyqo::Vec2 p2 = {.x = 160, .y = 180};
     psyqo::Vec2 p3 = {.x = 320, .y = 120};
 
-    auto bezierMovement = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+    auto bezierMovementLr = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
 
-    enemy.elements.push_back(bezierMovement);
+    enemy.elements.push_back(bezierMovementLr);
+    enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+    
+    enemies.push_back(enemy);
+    
+    auto bezierMovementRl= ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p3, p2, p1 }});
+    
+    enemy.elements.clear();
+    
+    enemy.elements.push_back(pattern);
+    enemy.elements.push_back(bezierMovementRl);
+    enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+
+    enemies.push_back(enemy);
 
     background1y = 0;
     background2y = 256;
@@ -161,9 +179,11 @@ void mi::Scenes::Geidontei::update() {
         m_playerPosition.y += speed;
     }
 
-    m_bulletList.update();
+    for(int i = 0; i != enemies.size(); i++) {
+        enemies[i].update(m_bulletList);
+    }
 
-    enemy.update(m_bulletList);
+    m_bulletList.update();
 
     const uint32_t hitboxSize = 4;
 
@@ -257,6 +277,7 @@ void mi::Scenes::Geidontei::render() {
 
     gpu().sendPrimitive(backgroundSprite);
 
+    //2nd scrolling part of the background
     backgroundSprite.pointA = {.x = 0, .y = static_cast<int16_t>(0 + background2y)};
     backgroundSprite.pointB = {.x = 320, .y = static_cast<int16_t>(0 + background2y)};
     backgroundSprite.pointC = {.x = 0, .y = static_cast<int16_t>(256 + background2y)};
@@ -313,7 +334,9 @@ void mi::Scenes::Geidontei::render() {
         gpu().sendPrimitive(sprite);
     }
 
-    enemy.draw(gpu());
+    for(int i = 0; i != enemies.size(); i++) {
+        enemies[i].draw(gpu());
+    }
 
     Bullet::setupBulletDrawing(gpu());
 

@@ -55,7 +55,7 @@ namespace mi {
             uint32_t m_playerLives;
             uint32_t m_immuneFrames;
 
-            Enemy enemy;
+            eastl::vector<Enemy> enemies;
 
             int16_t background1y;
             int16_t background2y;

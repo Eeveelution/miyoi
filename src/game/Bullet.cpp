@@ -57,10 +57,13 @@ UpdateAction Bullet::update() {
 
     position += velocity;
 
+    rotation += rotationChangeOverTime;
+
     int xInt = position.x.integer();
     int yInt = position.y.integer();
 
     if(xInt <= -50 || xInt >= 340 || yInt >= 250 || yInt <= -50) {
+        alive = false;
         return UpdateAction::DeleteFromList;
     }
 

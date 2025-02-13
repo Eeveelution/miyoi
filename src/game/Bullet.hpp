@@ -19,6 +19,7 @@ class Bullet {
         psyqo::Vec2 position;
         //how much gets added to position each frame
         psyqo::Angle rotation;
+        psyqo::Angle rotationChangeOverTime;
         psyqo::Vec2 speed;
 
         Bullet();

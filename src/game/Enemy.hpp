@@ -11,7 +11,8 @@
 enum ActionType {
     Movement,
     BezierMovement,
-    ShootPattern
+    ShootPattern,
+    Deactivate,
 };
 
 class ActionElement {
@@ -41,10 +42,13 @@ class ActionElement {
         time(time),
         endTime(endTime),
         bezierCurve(curve) {}
+    ActionElement(ActionType type, uint32_t time) : type(type), time(time) {}
 };
 
 class Enemy {
     public:
+    bool alive;
+    int healthPoints;
     psyqo::Vec2 position;
     psyqo::Vec2 spriteSize;
 

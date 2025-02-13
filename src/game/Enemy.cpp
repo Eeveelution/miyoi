@@ -20,12 +20,18 @@ Enemy::Enemy(psyqo::Vec2 position, psyqo::Vec2 initialVelocity, uint8_t tpageX, 
     this->position = position;
     this->velocity = initialVelocity;
     this->timeAlive = 0;
+    this->alive = true;
+    this->healthPoints = 50;
     this->tpageX = tpageX;
     this->tpageY = tpageY;
     this->doingBezierMovement = false;
 }
 
 void Enemy::draw(psyqo::GPU& gpu) {
+    if(!alive) {
+        return;
+    }
+
     psyqo::Prim::TPage tpage;
 
     tpage.attr
@@ -49,7 +55,6 @@ void Enemy::draw(psyqo::GPU& gpu) {
     sprite.size = {};
     sprite.size.x = spriteSize.x.integer();
     sprite.size.y = spriteSize.y.integer();
-    sprite.setColor(psyqo::Color{.r = 120});
 
     sprite.texInfo = { .u = 0, .v = 0 };
     sprite.setSemiTrans();
@@ -58,6 +63,10 @@ void Enemy::draw(psyqo::GPU& gpu) {
 }
 
 UpdateAction Enemy::update(BulletList& bulletList) {
+    if(!alive) {
+        return UpdateAction::DeleteFromList;
+    }
+
     if(!doingBezierMovement) {
         position += velocity;
     }
@@ -103,7 +112,6 @@ UpdateAction Enemy::update(BulletList& bulletList) {
                         velocity = current.newVelocity;
                         break;
                     case ActionType::ShootPattern:
-                        uint32_t patternSize = current.patternToShoot.size();
                         for(int i = 0; i != current.patternToShoot.size(); i++) {
                             psyqo::Vec2 relativeToEnemy = (current.patternToShoot[i].position + position) - (spriteSize / 2);
     
@@ -112,8 +120,9 @@ UpdateAction Enemy::update(BulletList& bulletList) {
                             bulletList.addBullet(current.patternToShoot[i]);
                         } 
                         break;
-                    // case ActionType::BezierMovement:
-                        
+                    case ActionType::Deactivate:
+                        alive = false;
+                        break;
                 }
             }
         }
