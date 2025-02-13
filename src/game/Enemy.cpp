@@ -1,4 +1,5 @@
 #include "Enemy.hpp"
+#include "EASTL/fixed_vector.h"
 #include "psyqo/fixed-point.hh"
 #include "psyqo/ordering-table.hh"
 #include "psyqo/primitives/control.hh"
@@ -6,6 +7,7 @@
 #include "psyqo/vector.hh"
 #include "psyqo/gpu.hh"
 #include "src/game/Bullet.hpp"
+#include "src/game/BulletList.hpp"
 
 psyqo::FixedPoint<> fplerp(psyqo::FixedPoint<> a,
     psyqo::FixedPoint<> b,
@@ -55,7 +57,7 @@ void Enemy::draw(psyqo::GPU& gpu) {
     gpu.sendPrimitive(sprite);
 }
 
-UpdateAction Enemy::update(eastl::vector<Bullet>& bulletList) {
+UpdateAction Enemy::update(BulletList& bulletList) {
     if(!doingBezierMovement) {
         position += velocity;
     }
@@ -107,7 +109,7 @@ UpdateAction Enemy::update(eastl::vector<Bullet>& bulletList) {
     
                             current.patternToShoot[i].position = relativeToEnemy;
     
-                            bulletList.push_back(current.patternToShoot[i]);
+                            bulletList.addBullet(current.patternToShoot[i]);
                         } 
                         break;
                     // case ActionType::BezierMovement:

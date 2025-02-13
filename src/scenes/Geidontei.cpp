@@ -32,9 +32,9 @@
 #include <EASTL/string.h>
 
 #include "../resources/TimFile.h"
-#include "../resources/PELLET.h"
-#include "../resources/HITBOX.h"
-#include "../resources/BACKGROUND.h"
+#include "../resources/PELLET.H"
+#include "../resources/HITBOX.H"
+#include "../resources/BACKGROUND.H"
 
 #include "../game/Bullet.hpp"
 
@@ -84,41 +84,9 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     m_playerPosition = { .x = 200, .y = 200 };
 
-    m_bullets.reserve(1024);
-
     eastl::vector<Bullet> allDirPattern{};
 
     const psyqo::FixedPoint<> unitVelocity = .25;
-
-    // Bullet bullet{
-    //     .position = { .x = 0, .y = 0 },
-    //     .velocity = { .x = unitVelocity, .y = unitVelocity }
-    // };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = 0, .y = unitVelocity };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = -unitVelocity, .y = unitVelocity };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = -unitVelocity, .y = 0 };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = -unitVelocity, .y = -unitVelocity };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = 0, .y = -unitVelocity };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = 1, .y = -unitVelocity };
-    // allDirPattern.push_back(bullet);
-
-    // bullet.velocity = { .x = unitVelocity, .y = 0 };
-    // allDirPattern.push_back(bullet);
-
-    
-    // allDirPattern.push_back(bullet);
 
     for(int i = 0; i != 360; i += 15) {
         Bullet bullet(psyqo::Vec2{0, 0}, 0, psyqo::Vec2{1, 1});
@@ -151,6 +119,9 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     auto bezierMovement = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
 
     enemy.elements.push_back(bezierMovement);
+
+    background1y = 0;
+    background2y = 320;
 }
 
 struct Face {
@@ -164,19 +135,6 @@ void mi::Scenes::Geidontei::frame() {
 }
 
 void mi::Scenes::Geidontei::update() {
-    mi::math::Rotation fp{};
-
-    fp.y = 0.00025; 
-    fp.y *= gpu().getFrameCount();
-
-    m_cubeObj.rotation = { m_currentAngle, m_currentAngle };
-    m_cubeObj.recalculateWorldMatrix();
-
-    m_Camera.rotation = fp;
-    m_Camera.recalculateViewRotationMatrix();
-
-    m_currentAngle += 0.005_pi;
-
     uint32_t speed = 2;
 
     if(m_immuneFrames > 0 ) {
@@ -203,19 +161,17 @@ void mi::Scenes::Geidontei::update() {
         m_playerPosition.y += speed;
     }
 
-    enemy.update(m_bullets);
+    m_bulletList.update();
+
+    enemy.update(m_bulletList);
 
     const uint32_t hitboxSize = 8;
 
-    eastl::vector<Bullet> stillAlive{};
+    for(int i = 0; i != 1024; i++) {
+        auto current = m_bulletList.m_bullets[i];
 
-    for(int i = 0; i != m_bullets.size(); i++) {
-        UpdateAction updateAction = m_bullets[i].update(m_playerPosition, m_playerScore);
-
-        if(updateAction == UpdateAction::DeleteFromList) {
+        if(!current.alive) {
             continue;
-        } else {
-            stillAlive.push_back(m_bullets[i]);
         }
 
         psyqo::Vec2 hitboxVertex{};
@@ -225,8 +181,8 @@ void mi::Scenes::Geidontei::update() {
 
         psyqo::Vec2 bulletVertex{};
 
-        bulletVertex.x = (m_bullets[i].position.x - 4);
-        bulletVertex.y = (m_bullets[i].position.y - 4);
+        bulletVertex.x = (current.position.x - 4);
+        bulletVertex.y = (current.position.y - 4);
 
 #define abs(x)  (x<0)?-x:x
 
@@ -243,12 +199,6 @@ void mi::Scenes::Geidontei::update() {
             m_playerScore++;
         }
     }
-
-    //remove offscreen bullets
-    if(stillAlive.size() > 0) {
-        m_bullets.clear();
-        m_bullets.assign(stillAlive.begin(), stillAlive.end());
-    }
 }
 
 void mi::Scenes::Geidontei::inputHandling() {
@@ -256,17 +206,23 @@ void mi::Scenes::Geidontei::inputHandling() {
 }
 
 void mi::Scenes::Geidontei::render() {
-    auto& ot = _game.getOrderingTable();
-    auto& pb = _game.getPrimBuffer();
-
-    pb.reset();
-
     int parity = gpu().getParity();
 
     auto& currentClear = m_clearFragment[parity];
 
     gpu().getNextClear(currentClear.primitive, m_clearColor);
     gpu().chain(currentClear);
+
+    background1y++;
+    background2y++;
+
+    if(background1y >= 320) {
+        background1y = -200;
+    }
+
+    if(background2y >= 320) {
+        background2y = -200;
+    }
 
     psyqo::Prim::TPage tpage;
 
@@ -280,26 +236,33 @@ void mi::Scenes::Geidontei::render() {
 
     gpu().sendPrimitive(tpage);
 
-    psyqo::Prim::TexturedQuad backgroundSpriteFirst {};
+    psyqo::Prim::TexturedQuad backgroundSprite {};
 
-    backgroundSpriteFirst.pointA = {.x = 0, .y = 0};
-    backgroundSpriteFirst.pointB = {.x = 320, .y = 0};
-    backgroundSpriteFirst.pointC = {.x = 320, .y = 256};
-    backgroundSpriteFirst.pointD = {.x = 0, .y = 256};
-    backgroundSpriteFirst.tpage = tpage.attr;
-    backgroundSpriteFirst.uvA = psyqo::PrimPieces::UVCoords{0, 0};
-    backgroundSpriteFirst.uvB = psyqo::PrimPieces::UVCoords{255, 0};
+    backgroundSprite.pointA = {.x = 0, .y = static_cast<int16_t>(0 + background1y)};
+    backgroundSprite.pointB = {.x = 320, .y = static_cast<int16_t>(0 + background1y)};
+    backgroundSprite.pointC = {.x = 320, .y = static_cast<int16_t>(256 + background1y)};
+    backgroundSprite.pointD = {.x = 0, .y = static_cast<int16_t>(256 + background1y)};
+    backgroundSprite.tpage = tpage.attr;
+    backgroundSprite.uvA = psyqo::PrimPieces::UVCoords{0, 0};
+    backgroundSprite.uvB = psyqo::PrimPieces::UVCoords{255, 0};
 
     auto uvCD = psyqo::PrimPieces::UVCoordsPadded{};
     uvCD.u = 255;
     uvCD.v = 255;
 
-    backgroundSpriteFirst.uvC = uvCD;
+    backgroundSprite.uvC = uvCD;
 
     uvCD.u = 0;
-    backgroundSpriteFirst.uvD = uvCD;
+    backgroundSprite.uvD = uvCD;
 
-    gpu().sendPrimitive(backgroundSpriteFirst);
+    gpu().sendPrimitive(backgroundSprite);
+
+    backgroundSprite.pointA = {.x = 0, .y = static_cast<int16_t>(0 + background2y)};
+    backgroundSprite.pointB = {.x = 320, .y = static_cast<int16_t>(0 + background2y)};
+    backgroundSprite.pointC = {.x = 320, .y = static_cast<int16_t>(256 + background2y)};
+    backgroundSprite.pointD = {.x = 0, .y = static_cast<int16_t>(256 + background2y)};
+
+    gpu().sendPrimitive(backgroundSprite);
 
     tpage.attr
         .setPageX(5)
@@ -351,21 +314,11 @@ void mi::Scenes::Geidontei::render() {
     }
 
     enemy.draw(gpu());
-
-    Bullet::setupBulletDrawing(gpu());
-
-    uint32_t bulletCount = m_bullets.size();
-
-    for(int i = 0; i != bulletCount; i++) {
-        m_bullets[i].draw(gpu());
-    }
+    m_bulletList.draw(gpu());
 
     psyqo::Vertex textVertex{};
     textVertex.x = 0;
     textVertex.y = 2;
 
-    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d; BULLETS: %d", m_playerScore, m_playerLives, bulletCount);
-
-    //send all the fragments and the ordering table to the gpu
-    gpu().chain(ot);
+    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d", m_playerScore, m_playerLives);
 }

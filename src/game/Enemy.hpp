@@ -1,10 +1,12 @@
 #pragma once
 
 #include "EASTL/array.h"
+#include "EASTL/fixed_vector.h"
 #include "EASTL/vector.h"
 #include "psyqo/ordering-table.hh"
 #include "psyqo/vector.hh"
 #include "src/game/Bullet.hpp"
+#include "src/game/BulletList.hpp"
 
 enum ActionType {
     Movement,
@@ -59,6 +61,6 @@ class Enemy {
     Enemy() : position({}), spriteSize({}), elements({}), velocity({}), tpageX(0), tpageY(0), timeAlive(0){}
     Enemy(psyqo::Vec2 position, psyqo::Vec2 initialVelocity, uint8_t tpageX, uint8_t tpageY);
 
-    UpdateAction update(eastl::vector<Bullet>& bulletList);
+    UpdateAction update(BulletList& bulletList);
     void draw(psyqo::GPU& gpu);
 };

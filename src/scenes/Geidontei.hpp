@@ -7,8 +7,10 @@
 
 #include "../GameBase.hpp"
 #include "EASTL/array.h"
+#include "EASTL/fixed_vector.h"
 #include "EASTL/vector.h"
 #include "psyqo/advancedpad.hh"
+#include "psyqo/fixed-point.hh"
 #include "psyqo/fragment-concept.hh"
 #include "psyqo/fragments.hh"
 #include "psyqo/primitives/common.hh"
@@ -17,6 +19,7 @@
 #include "psyqo/trigonometry.hh"
 #include "psyqo/vector.hh"
 #include "src/game/Bullet.hpp"
+#include "src/game/BulletList.hpp"
 #include "src/game/Enemy.hpp"
 #include "src/math/Camera.hpp"
 #include "src/math/Object.hpp"
@@ -45,7 +48,7 @@ namespace mi {
             psyqo::AdvancedPad pad;
             psyqo::Vec2 m_playerPosition;
 
-            eastl::vector<Bullet> m_bullets;
+            BulletList m_bulletList;
 
             uint32_t m_playerScore;
 
@@ -53,6 +56,9 @@ namespace mi {
             uint32_t m_immuneFrames;
 
             Enemy enemy;
+
+            int16_t background1y;
+            int16_t background2y;
         public:
             Geidontei(GameBase& game);
 
