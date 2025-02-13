@@ -84,36 +84,41 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     eastl::vector<Bullet> allDirPattern{};
 
+    const psyqo::FixedPoint<> unitVelocity = .25;
+
     Bullet bullet{
-        .position = { .x = 0, .y = 0 },
-        .velocity = { .x = 1, .y = 1 }
+        .position = { .x = 50, .y = 50 },
+        .velocity = { .x = 0, .y = 0 }
+        // .velocity = { .x = unitVelocity, .y = unitVelocity }
     };
     allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = 0, .y = 1 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = 0, .y = unitVelocity };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = -1, .y = 1 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = -unitVelocity, .y = unitVelocity };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = -1, .y = 0 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = -unitVelocity, .y = 0 };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = -1, .y = -1 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = -unitVelocity, .y = -unitVelocity };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = 0, .y = -1 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = 0, .y = -unitVelocity };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = 1, .y = -1 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = 1, .y = -unitVelocity };
+    // allDirPattern.push_back(bullet);
 
-    bullet.velocity = { .x = 1, .y = 0 };
-    allDirPattern.push_back(bullet);
+    // bullet.velocity = { .x = unitVelocity, .y = 0 };
+    // allDirPattern.push_back(bullet);
 
     m_playerScore = 0;
     m_playerLives = 3;
     m_immuneFrames = 0;
+
+    //Stage creation
 
     enemy = Enemy(psyqo::Vec2{.x = 64, .y = 64}, psyqo::Vec2{.x = .5, .y = 0}, 5, 0);
 
@@ -121,7 +126,7 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     enemy.spriteSize.y = 48;
 
     auto pattern = ActionElement(60, allDirPattern);
-    pattern.repeatEvery = 20;
+    pattern.repeatEvery = 0;
 
     enemy.elements.push_back(pattern);
 
@@ -129,10 +134,9 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     psyqo::Vec2 p2 = {.x = 160, .y = 120};
     psyqo::Vec2 p3 = {.x = 320, .y = 0};
 
-    auto bezierMovement = ActionElement(60, 200, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+    auto bezierMovement = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
 
     enemy.elements.push_back(bezierMovement);
-    // enemy.elements.push_back(ActionElement(180, allDirPattern));
 }
 
 struct Face {
@@ -205,8 +209,20 @@ void mi::Scenes::Geidontei::update() {
         hitboxVertex.x = (m_playerPosition.x - 4).integer();
         hitboxVertex.y = (m_playerPosition.y - 4).integer();
 
-        auto distanceX = (hitboxVertex.x - m_bullets[i].position.x).abs();
-        auto distanceY = (hitboxVertex.y - m_bullets[i].position.y).abs();
+        psyqo::Vertex bulletVertex{};
+
+        bulletVertex.x = (m_bullets[i].position.x - 4).integer();
+        bulletVertex.y = (m_bullets[i].position.y - 4).integer();
+
+#define abs(x)  (x<0)?-x:x
+
+        auto distanceX = abs((hitboxVertex.x - bulletVertex.x));
+        auto distanceY = abs((hitboxVertex.y - bulletVertex.y));
+
+        psyqo::Vertex debugVertex{};
+
+
+        _game.getSystemFont().printf(gpu(), debugVertex, psyqo::Color{.b = 255}, "X: %d; Y: %d", distanceX, distanceY);
 
         if (distanceX < 8 && distanceY < 8 && m_immuneFrames == 0) {
             // Collision
@@ -214,7 +230,7 @@ void mi::Scenes::Geidontei::update() {
             m_immuneFrames = 60;
         }
 
-        auto closest = eastl::min(distanceX.integer(), distanceY.integer());
+        auto closest = eastl::min(distanceX, distanceY);
 
         if(closest < 20) {
             m_playerScore++;
@@ -306,7 +322,7 @@ void mi::Scenes::Geidontei::render() {
     textVertex.x = 80;
     textVertex.y = 2;
 
-    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d", m_playerScore, m_playerLives);
+    // _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d", m_playerScore, m_playerLives);
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);
