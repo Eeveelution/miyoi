@@ -88,6 +88,21 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     m_playerPosition = { .x = 200, .y = 200 };
 
+    m_playerScore = 0;
+    m_playerLives = 3;
+    m_immuneFrames = 0;
+
+    //Stage creation
+    createStage();
+
+    background1y = 0;
+    background2y = 256;
+
+    time = 0;
+    paused = false;
+}
+
+void mi::Scenes::Geidontei::createStage() {
     eastl::vector<Bullet> allDirPattern{};
 
     const psyqo::FixedPoint<> unitVelocity = .25;
@@ -99,47 +114,148 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
         allDirPattern.push_back(bullet);
     }
 
-    uint32_t patternBullets = allDirPattern.size();
-
-    m_playerScore = 0;
-    m_playerLives = 3;
-    m_immuneFrames = 0;
-
-    //Stage creation
-
-    Enemy enemy = Enemy(psyqo::Vec2{.x = 64, .y = 64}, psyqo::Vec2{.x = .5, .y = 0}, 5, 1);
-
+    //Creating the 2 fairies going across the stage
+    Enemy enemy = Enemy(psyqo::Vec2{.x = -64, .y = -64}, psyqo::Vec2{.x = 0, .y = 0}, 5, 1);
     enemy.spriteSize.x = 30;
     enemy.spriteSize.y = 30;
-
-    auto pattern = ActionElement(60, allDirPattern);
-    pattern.repeatEvery = 30;
-
-    enemy.elements.push_back(pattern);
-
-    psyqo::Vec2 p1 = {.x = 0, .y = 120};
-    psyqo::Vec2 p2 = {.x = 160, .y = 180};
-    psyqo::Vec2 p3 = {.x = 320, .y = 120};
-
-    auto bezierMovementLr = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
-
-    enemy.elements.push_back(bezierMovementLr);
-    enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+    {    
+        auto pattern = ActionElement(60, allDirPattern);
+        pattern.repeatEvery = 30;
     
-    enemies.push_back(enemy);
+        enemy.elements.push_back(pattern);
     
-    auto bezierMovementRl= ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p3, p2, p1 }});
+        psyqo::Vec2 p1 = {.x = 0, .y = 120};
+        psyqo::Vec2 p2 = {.x = 160, .y = 180};
+        psyqo::Vec2 p3 = {.x = 320, .y = 120};
     
+        auto bezierMovementLr = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+    
+        enemy.elements.push_back(bezierMovementLr);
+        enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+        
+        enemies.push_back(enemy);
+        
+        auto bezierMovementRl= ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p3, p2, p1 }});
+        
+        enemy.elements.clear();
+        
+        enemy.elements.push_back(pattern);
+        enemy.elements.push_back(bezierMovementRl);
+        enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+    
+        enemies.push_back(enemy);
+    }
+
     enemy.elements.clear();
     
-    enemy.elements.push_back(pattern);
-    enemy.elements.push_back(bezierMovementRl);
-    enemy.elements.push_back(ActionElement(ActionType::Deactivate, 610));
+    //creating 2 fairies coming from the top
+    {
+        psyqo::Vec2 p1 = {.x = 96, .y = -40};
+        psyqo::Vec2 p2 = {.x = 96, .y = 64};
+        psyqo::Vec2 p3 = {.x = 96, .y = 64};
 
-    enemies.push_back(enemy);
+        ActionElement deactivate = ActionElement(ActionType::Deactivate, 1200);
 
-    background1y = 0;
-    background2y = 256;
+        auto offscreenAppearance = ActionElement(800, 60, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+        auto disappearOffscreen = ActionElement(1040, 120, eastl::array<psyqo::Vec2, 3>{{ p3, p2, p1 }});
+        
+        enemy.elements.push_back(offscreenAppearance);
+        enemy.elements.push_back(disappearOffscreen);
+        enemy.elements.push_back(deactivate);
+
+        eastl::vector<Bullet> straightDownPattern;
+
+        Bullet b = Bullet(psyqo::Vec2{0, 0}, 110, psyqo::Vec2{.x = 1.5, .y = 1.5});
+        b.rotationChangeOverTime = psyqo::Angle(0, 75);
+        straightDownPattern.push_back(b);
+
+        b.rotation = 90;
+        b.rotationChangeOverTime = psyqo::Angle(0, 0);
+        straightDownPattern.push_back(b);
+
+        b.rotation = 70;
+        b.rotationChangeOverTime = psyqo::Angle(0, -75);
+        straightDownPattern.push_back(b);
+
+        auto patternShoot = ActionElement(735, straightDownPattern);
+        patternShoot.repeatEvery = 24;
+        patternShoot.length = 500;
+
+        enemy.elements.push_back(patternShoot);
+
+        enemies.push_back(enemy);
+
+        enemy.elements.clear();
+
+        p1.x = p2.x = p3.x = 224;
+
+        offscreenAppearance = ActionElement(800, 60, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+        disappearOffscreen = ActionElement(1040, 120, eastl::array<psyqo::Vec2, 3>{{ p3, p2, p1 }});
+
+        enemy.elements.push_back(offscreenAppearance);
+        enemy.elements.push_back(disappearOffscreen);
+        enemy.elements.push_back(patternShoot);
+        enemy.elements.push_back(deactivate);
+
+        enemies.push_back(enemy);
+    }
+
+    //many fairies both sides circular pattern
+    {
+        eastl::vector<Bullet> straightDownPattern;
+        eastl::vector<Bullet> straightDownPatternR;
+
+        Bullet b = Bullet(psyqo::Vec2{0, 0}, 60, psyqo::Vec2{.x = 1.5, .y = 1.5});
+        // b.rotationChangeOverTime = psyqo::Angle(-1, 25);
+        straightDownPattern.push_back(b);
+
+        b = Bullet(psyqo::Vec2{0, 0}, 120, psyqo::Vec2{.x = 1.5, .y = 1.5});
+        // b.rotationChangeOverTime = psyqo::Angle(1, 25);
+        straightDownPatternR.push_back(b);
+
+        auto patternShoot = ActionElement(1300, straightDownPattern);
+        patternShoot.repeatEvery = 30;
+        patternShoot.length = 800;
+
+        auto patternShootR = ActionElement(1300, straightDownPatternR);
+        patternShootR.repeatEvery = 30;
+        patternShootR.length = 800;
+
+        psyqo::Vec2 p1 = {.x = -64, .y = 120};
+        psyqo::Vec2 p2 = {.x = 150, .y = 120};
+        psyqo::Vec2 p3 = {.x = 150, .y = -64};
+
+        psyqo::Vec2 rp1 = {.x = 384, .y = 120};
+        psyqo::Vec2 rp2 = {.x = 170, .y = 120};
+        psyqo::Vec2 rp3 = {.x = 170, .y = -64};
+
+        for(int i = 0; i != 10; i++) {
+            if(i % 2 == 0) {
+                enemy.uv = {.u = 32, .v = 0};
+            } else {
+                enemy.uv = {.u = 0, .v = 0};
+            }
+            
+            auto disappearOffscreen = ActionElement(1200 + (i * 30), 360, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
+            auto disappearOffscreenR = ActionElement(1200 + (i * 30), 360, eastl::array<psyqo::Vec2, 3>{{ rp1, rp2, rp3 }});
+            
+            enemy.elements.clear();
+
+            enemy.elements.push_back(disappearOffscreen);
+            enemy.elements.push_back(patternShoot);
+            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 10) + 600));
+
+            enemies.push_back(enemy);
+
+            enemy.elements.clear();
+
+            enemy.elements.push_back(disappearOffscreenR);
+            enemy.elements.push_back(patternShootR);
+            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 10) + 600));
+
+            enemies.push_back(enemy);
+        }
+    }
 }
 
 struct Face {
@@ -153,70 +269,76 @@ void mi::Scenes::Geidontei::frame() {
 }
 
 void mi::Scenes::Geidontei::update() {
-    uint32_t speed = 2;
-
-    if(m_immuneFrames > 0 ) {
-        m_immuneFrames--;
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Start)) {
+        paused = true;
     }
 
-    if(
-        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::L1) ||
-        pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::R1) 
-    ) {
-        speed = 1;
-    }
-
-    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Left)) {
-        m_playerPosition.x -= speed;
-    }
-    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Right)) {
-        m_playerPosition.x += speed;
-    }
-    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Up)) {
-        m_playerPosition.y -= speed;
-    }
-    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Down)) {
-        m_playerPosition.y += speed;
-    }
-
-    for(int i = 0; i != enemies.size(); i++) {
-        enemies[i].update(m_bulletList);
-    }
-
-    m_bulletList.update();
-
-    const uint32_t hitboxSize = 4;
-
-    for(int i = 0; i != BULLET_LIST_SIZE; i++) {
-        auto current = m_bulletList.m_bullets[i];
-
-        if(!current.alive) {
-            continue;
+    if(!paused) {
+        uint32_t speed = 2;
+    
+        if(m_immuneFrames > 0 ) {
+            m_immuneFrames--;
         }
-
-        psyqo::Vec2 hitboxVertex{};
-
-        hitboxVertex.x = (m_playerPosition.x - 4);
-        hitboxVertex.y = (m_playerPosition.y - 4);
-
-        psyqo::Vec2 bulletVertex{};
-
-        bulletVertex.x = (current.position.x - 4);
-        bulletVertex.y = (current.position.y - 4);
-
-#define abs(x)  (x<0)?-x:x
-
-        auto distanceX = abs((hitboxVertex.x - bulletVertex.x));
-        auto distanceY = abs((hitboxVertex.y - bulletVertex.y));
-
-        if (distanceX < 6 && distanceY < 6 && m_immuneFrames == 0) {
-            // Collision
-            m_playerLives--;
-            m_immuneFrames = 60;
+    
+        if(
+            pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::L1) ||
+            pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::R1) 
+        ) {
+            speed = 1;
         }
-
-        if(distanceX < 30 && distanceY < 30) {
-            m_playerScore++;
+    
+        if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Left)) {
+            m_playerPosition.x -= speed;
+        }
+        if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Right)) {
+            m_playerPosition.x += speed;
+        }
+        if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Up)) {
+            m_playerPosition.y -= speed;
+        }
+        if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Down)) {
+            m_playerPosition.y += speed;
+        }
+    
+        for(int i = 0; i != enemies.size(); i++) {
+            enemies[i].update(m_bulletList);
+        }
+    
+        m_bulletList.update();
+    
+        const uint32_t hitboxSize = 4;
+    
+        for(int i = 0; i != BULLET_LIST_SIZE; i++) {
+            auto current = m_bulletList.m_bullets[i];
+    
+            if(!current.alive) {
+                continue;
+            }
+    
+            psyqo::Vec2 hitboxVertex{};
+    
+            hitboxVertex.x = (m_playerPosition.x - 4);
+            hitboxVertex.y = (m_playerPosition.y - 4);
+    
+            psyqo::Vec2 bulletVertex{};
+    
+            bulletVertex.x = (current.position.x - 4);
+            bulletVertex.y = (current.position.y - 4);
+    
+    #define abs(x)  (x<0)?-x:x
+    
+            auto distanceX = abs((hitboxVertex.x - bulletVertex.x));
+            auto distanceY = abs((hitboxVertex.y - bulletVertex.y));
+    
+            if (distanceX < 6 && distanceY < 6 && m_immuneFrames == 0) {
+                // Collision
+                m_playerLives--;
+                m_immuneFrames = 60;
+            }
+    
+            if(distanceX < 30 && distanceY < 30) {
+                m_playerScore++;
+            }
         }
     }
 }
@@ -346,5 +468,7 @@ void mi::Scenes::Geidontei::render() {
     textVertex.x = 0;
     textVertex.y = 2;
 
-    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d", m_playerScore, m_playerLives);
+    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.r = 255,  .g = 255, .b = 255}, "SCORE: %d; LIVES: %d; TIME: %d", m_playerScore, m_playerLives, time);
+
+    time++;
 }

@@ -4,6 +4,7 @@
 #include "EASTL/fixed_vector.h"
 #include "EASTL/vector.h"
 #include "psyqo/ordering-table.hh"
+#include "psyqo/primitives/common.hh"
 #include "psyqo/vector.hh"
 #include "src/game/Bullet.hpp"
 #include "src/game/BulletList.hpp"
@@ -18,7 +19,7 @@ enum ActionType {
 class ActionElement {
     public:
     uint32_t time;
-    uint32_t endTime;
+    uint32_t length;
     uint32_t repeatEvery;
 
     ActionType type;
@@ -40,7 +41,7 @@ class ActionElement {
     ActionElement(uint32_t time, uint32_t endTime, eastl::array<psyqo::Vec2, 3> curve) 
       : type(ActionType::BezierMovement), 
         time(time),
-        endTime(endTime),
+        length(endTime),
         bezierCurve(curve) {}
     ActionElement(ActionType type, uint32_t time) : type(type), time(time) {}
 };
@@ -51,6 +52,7 @@ class Enemy {
     int healthPoints;
     psyqo::Vec2 position;
     psyqo::Vec2 spriteSize;
+    psyqo::PrimPieces::TexInfo uv;
 
     eastl::vector<ActionElement> elements;
 

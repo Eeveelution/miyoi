@@ -29,10 +29,8 @@ namespace mi {
     namespace Scenes {
         class Geidontei final : public psyqo::Scene {
         private:
-            // We'll have some simple animation going on, so we
-            // need to keep track of our state here.
-            uint8_t _anim = 0;
-            bool _direction = true;
+            uint32_t time;
+            bool paused;
 
             GameBase& _game; 
 
@@ -61,6 +59,7 @@ namespace mi {
             int16_t background2y;
         public:
             Geidontei(GameBase& game);
+            void createStage();
 
             void frame() override;
         private:

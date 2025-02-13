@@ -2,6 +2,7 @@
 
 #include "psyqo/fixed-point.hh"
 #include "psyqo/ordering-table.hh"
+#include "psyqo/primitives/common.hh"
 #include "psyqo/primitives/sprites.hh"
 #include "psyqo/trigonometry.hh"
 #include "psyqo/vector.hh"

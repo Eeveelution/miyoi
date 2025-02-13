@@ -2,6 +2,7 @@
 #include "EASTL/fixed_vector.h"
 #include "psyqo/fixed-point.hh"
 #include "psyqo/ordering-table.hh"
+#include "psyqo/primitives/common.hh"
 #include "psyqo/primitives/control.hh"
 #include "psyqo/primitives/sprites.hh"
 #include "psyqo/vector.hh"
@@ -25,6 +26,7 @@ Enemy::Enemy(psyqo::Vec2 position, psyqo::Vec2 initialVelocity, uint8_t tpageX, 
     this->tpageX = tpageX;
     this->tpageY = tpageY;
     this->doingBezierMovement = false;
+    this->uv = psyqo::PrimPieces::TexInfo{ .u = 0, .v = 0 };
 }
 
 void Enemy::draw(psyqo::GPU& gpu) {
@@ -56,7 +58,7 @@ void Enemy::draw(psyqo::GPU& gpu) {
     sprite.size.x = spriteSize.x.integer();
     sprite.size.y = spriteSize.y.integer();
 
-    sprite.texInfo = { .u = 0, .v = 0 };
+    sprite.texInfo = this->uv;
     sprite.setSemiTrans();
 
     gpu.sendPrimitive(sprite);
@@ -79,7 +81,7 @@ UpdateAction Enemy::update(BulletList& bulletList) {
         if(current.type == ActionType::BezierMovement) {
         // if(current.type == ActionType::BezierMovement && timeAlive >= current.time && timeAlive < current.endTime) {
             psyqo::FixedPoint<> t = psyqo::FixedPoint<>(
-                psyqo::FixedPoint<>(timeAlive, 0) / psyqo::FixedPoint<>(current.endTime, 0)
+                psyqo::FixedPoint<>(timeAlive - current.time, 0) / psyqo::FixedPoint<>(current.length, 0)
             );
 
             if(t > 0 && t < 1) {
