@@ -121,7 +121,7 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     enemy.elements.push_back(bezierMovement);
 
     background1y = 0;
-    background2y = 320;
+    background2y = 256;
 }
 
 struct Face {
@@ -165,9 +165,9 @@ void mi::Scenes::Geidontei::update() {
 
     enemy.update(m_bulletList);
 
-    const uint32_t hitboxSize = 8;
+    const uint32_t hitboxSize = 4;
 
-    for(int i = 0; i != 1024; i++) {
+    for(int i = 0; i != BULLET_LIST_SIZE; i++) {
         auto current = m_bulletList.m_bullets[i];
 
         if(!current.alive) {
@@ -216,12 +216,12 @@ void mi::Scenes::Geidontei::render() {
     background1y++;
     background2y++;
 
-    if(background1y >= 320) {
-        background1y = -200;
+    if(background1y >= 256) {
+        background1y = -255;
     }
 
-    if(background2y >= 320) {
-        background2y = -200;
+    if(background2y >= 256) {
+        background2y = -255;
     }
 
     psyqo::Prim::TPage tpage;
@@ -240,27 +240,27 @@ void mi::Scenes::Geidontei::render() {
 
     backgroundSprite.pointA = {.x = 0, .y = static_cast<int16_t>(0 + background1y)};
     backgroundSprite.pointB = {.x = 320, .y = static_cast<int16_t>(0 + background1y)};
-    backgroundSprite.pointC = {.x = 320, .y = static_cast<int16_t>(256 + background1y)};
-    backgroundSprite.pointD = {.x = 0, .y = static_cast<int16_t>(256 + background1y)};
+    backgroundSprite.pointC = {.x = 0, .y = static_cast<int16_t>(256 + background1y)};
+    backgroundSprite.pointD = {.x = 320, .y = static_cast<int16_t>(256 + background1y)};
     backgroundSprite.tpage = tpage.attr;
     backgroundSprite.uvA = psyqo::PrimPieces::UVCoords{0, 0};
     backgroundSprite.uvB = psyqo::PrimPieces::UVCoords{255, 0};
 
     auto uvCD = psyqo::PrimPieces::UVCoordsPadded{};
-    uvCD.u = 255;
+    uvCD.u = 0;
     uvCD.v = 255;
 
     backgroundSprite.uvC = uvCD;
 
-    uvCD.u = 0;
+    uvCD.u = 255;
     backgroundSprite.uvD = uvCD;
 
     gpu().sendPrimitive(backgroundSprite);
 
     backgroundSprite.pointA = {.x = 0, .y = static_cast<int16_t>(0 + background2y)};
     backgroundSprite.pointB = {.x = 320, .y = static_cast<int16_t>(0 + background2y)};
-    backgroundSprite.pointC = {.x = 320, .y = static_cast<int16_t>(256 + background2y)};
-    backgroundSprite.pointD = {.x = 0, .y = static_cast<int16_t>(256 + background2y)};
+    backgroundSprite.pointC = {.x = 0, .y = static_cast<int16_t>(256 + background2y)};
+    backgroundSprite.pointD = {.x = 320, .y = static_cast<int16_t>(256 + background2y)};
 
     gpu().sendPrimitive(backgroundSprite);
 
@@ -314,6 +314,9 @@ void mi::Scenes::Geidontei::render() {
     }
 
     enemy.draw(gpu());
+
+    Bullet::setupBulletDrawing(gpu());
+
     m_bulletList.draw(gpu());
 
     psyqo::Vertex textVertex{};

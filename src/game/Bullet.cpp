@@ -49,7 +49,7 @@ void Bullet::draw(psyqo::GPU &gpu) {
     gpu.sendPrimitive(sprite);
 }
 
-void Bullet::update() {
+UpdateAction Bullet::update() {
     psyqo::Vec2 velocity{
         .x = mi::math::TrigTable.cos(this->rotation / 180.0) * speed.x,
         .y = mi::math::TrigTable.sin(this->rotation / 180.0) * speed.y
@@ -61,6 +61,8 @@ void Bullet::update() {
     int yInt = position.y.integer();
 
     if(xInt <= -50 || xInt >= 340 || yInt >= 250 || yInt <= -50) {
-        alive = false;
+        return UpdateAction::DeleteFromList;
     }
+
+    return UpdateAction::Nothing;
 }
