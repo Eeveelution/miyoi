@@ -1,6 +1,9 @@
 #include "Bullet.hpp"
 #include "psyqo/gpu.hh"
+#include "psyqo/primitives/common.hh"
 #include "psyqo/primitives/sprites.hh"
+#include "psyqo/vector.hh"
+// #include "psyqo/literal
 
 void Bullet::setupBulletDrawing(psyqo::GPU &gpu) {
     psyqo::Prim::TPage tpage;
@@ -30,6 +33,28 @@ void Bullet::draw(psyqo::GPU &gpu) {
     gpu.sendPrimitive(sprite);
 }
 
-void Bullet::update() {
+UpdateAction Bullet::update(psyqo::Vec2& playerPosition, uint32_t& playerScore) {
     position += velocity;
+    // position = psyqo::Vec2{.x= 310, .y=230};
+
+    int xInt = position.x.integer();
+    int yInt = position.y.integer();
+
+    if(xInt <= -50) {
+        return UpdateAction::DeleteFromList;
+    }
+
+    if(xInt >= 340) {
+        return UpdateAction::DeleteFromList;
+    }
+
+    if(yInt >= 250) {
+        return UpdateAction::DeleteFromList;
+    }
+
+    if(yInt <= -50) {
+        return UpdateAction::DeleteFromList;
+    }
+
+    return UpdateAction::Nothing;
 }

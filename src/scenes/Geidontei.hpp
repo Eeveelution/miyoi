@@ -17,6 +17,7 @@
 #include "psyqo/trigonometry.hh"
 #include "psyqo/vector.hh"
 #include "src/game/Bullet.hpp"
+#include "src/game/Enemy.hpp"
 #include "src/math/Camera.hpp"
 #include "src/math/Object.hpp"
 
@@ -45,6 +46,13 @@ namespace mi {
             psyqo::Vec2 m_playerPosition;
 
             eastl::vector<Bullet> m_bullets;
+
+            uint32_t m_playerScore;
+
+            uint32_t m_playerLives;
+            uint32_t m_immuneFrames;
+
+            Enemy enemy;
         public:
             Geidontei(GameBase& game);
 
