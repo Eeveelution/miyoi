@@ -1,7 +1,7 @@
 TARGET = miyoi
 TYPE = ps-exe
 
-CPPFLAGS += -I./ -O2
+CPPFLAGS += -I./ -O3
 
 SRCS = src/main.cpp src/GameBase.cpp src/scenes/Geidontei.cpp src/gpu/Rendering.cpp src/resources/TimFile.cpp src/game/Bullet.cpp src/game/Enemy.cpp
 

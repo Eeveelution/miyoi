@@ -7,6 +7,7 @@
 #include "psyqo/gte-registers.hh"
 #include "psyqo/primitives/common.hh"
 #include "psyqo/primitives/control.hh"
+#include "psyqo/primitives/quads.hh"
 #include "psyqo/primitives/sprites.hh"
 #include "psyqo/vector.hh"
 
@@ -33,6 +34,7 @@
 #include "../resources/TimFile.h"
 #include "../resources/PELLET.h"
 #include "../resources/HITBOX.h"
+#include "../resources/BACKGROUND.h"
 
 #include "../game/Bullet.hpp"
 
@@ -71,10 +73,12 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     psyqo::Rect mariRegion = {.pos = {{.x = 320, .y = 0}}, .size = {{.w = 32, .h = 48}}};
     psyqo::Rect pelletRegion = {.pos = {{.x = 384, .y = 0}}, .size = {{.w = 8, .h = 8}}};
     psyqo::Rect hitboxRegion = {.pos = {{.x = 448, .y = 0}}, .size = {{.w = 8, .h = 8}}};
+    psyqo::Rect bgRegion = {.pos = {{.x = 768, .y = 0}}, .size = {{.w = 256, .h = 256}}};
 
     loadByteArrayTexture(gpu(), BLACKMARI, 3096, mariRegion);
     loadByteArrayTexture(gpu(), PELLET, 152, pelletRegion);
     loadByteArrayTexture(gpu(), HITBOX, 152, hitboxRegion);
+    loadByteArrayTexture(gpu(), BACKGROUND, 131096, bgRegion);
 
     pad.initialize();
 
@@ -86,12 +90,11 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
 
     const psyqo::FixedPoint<> unitVelocity = .25;
 
-    Bullet bullet{
-        .position = { .x = 50, .y = 50 },
-        .velocity = { .x = 0, .y = 0 }
-        // .velocity = { .x = unitVelocity, .y = unitVelocity }
-    };
-    allDirPattern.push_back(bullet);
+    // Bullet bullet{
+    //     .position = { .x = 0, .y = 0 },
+    //     .velocity = { .x = unitVelocity, .y = unitVelocity }
+    // };
+    // allDirPattern.push_back(bullet);
 
     // bullet.velocity = { .x = 0, .y = unitVelocity };
     // allDirPattern.push_back(bullet);
@@ -114,6 +117,17 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     // bullet.velocity = { .x = unitVelocity, .y = 0 };
     // allDirPattern.push_back(bullet);
 
+    
+    // allDirPattern.push_back(bullet);
+
+    for(int i = 0; i != 360; i += 15) {
+        Bullet bullet(psyqo::Vec2{0, 0}, 0, psyqo::Vec2{1, 1});
+        bullet.rotation = psyqo::Angle(i, 0);
+        allDirPattern.push_back(bullet);
+    }
+
+    uint32_t patternBullets = allDirPattern.size();
+
     m_playerScore = 0;
     m_playerLives = 3;
     m_immuneFrames = 0;
@@ -126,13 +140,13 @@ mi::Scenes::Geidontei::Geidontei(GameBase& game)
     enemy.spriteSize.y = 48;
 
     auto pattern = ActionElement(60, allDirPattern);
-    pattern.repeatEvery = 0;
+    pattern.repeatEvery = 30;
 
     enemy.elements.push_back(pattern);
 
-    psyqo::Vec2 p1 = {.x = 0, .y = 0};
-    psyqo::Vec2 p2 = {.x = 160, .y = 120};
-    psyqo::Vec2 p3 = {.x = 320, .y = 0};
+    psyqo::Vec2 p1 = {.x = 0, .y = 120};
+    psyqo::Vec2 p2 = {.x = 160, .y = 180};
+    psyqo::Vec2 p3 = {.x = 320, .y = 120};
 
     auto bezierMovement = ActionElement(60, 600, eastl::array<psyqo::Vec2, 3>{{ p1, p2, p3 }});
 
@@ -204,42 +218,37 @@ void mi::Scenes::Geidontei::update() {
             stillAlive.push_back(m_bullets[i]);
         }
 
-        psyqo::Vertex hitboxVertex{};
+        psyqo::Vec2 hitboxVertex{};
 
-        hitboxVertex.x = (m_playerPosition.x - 4).integer();
-        hitboxVertex.y = (m_playerPosition.y - 4).integer();
+        hitboxVertex.x = (m_playerPosition.x - 4);
+        hitboxVertex.y = (m_playerPosition.y - 4);
 
-        psyqo::Vertex bulletVertex{};
+        psyqo::Vec2 bulletVertex{};
 
-        bulletVertex.x = (m_bullets[i].position.x - 4).integer();
-        bulletVertex.y = (m_bullets[i].position.y - 4).integer();
+        bulletVertex.x = (m_bullets[i].position.x - 4);
+        bulletVertex.y = (m_bullets[i].position.y - 4);
 
 #define abs(x)  (x<0)?-x:x
 
         auto distanceX = abs((hitboxVertex.x - bulletVertex.x));
         auto distanceY = abs((hitboxVertex.y - bulletVertex.y));
 
-        psyqo::Vertex debugVertex{};
-
-
-        _game.getSystemFont().printf(gpu(), debugVertex, psyqo::Color{.b = 255}, "X: %d; Y: %d", distanceX, distanceY);
-
-        if (distanceX < 8 && distanceY < 8 && m_immuneFrames == 0) {
+        if (distanceX < 6 && distanceY < 6 && m_immuneFrames == 0) {
             // Collision
             m_playerLives--;
             m_immuneFrames = 60;
         }
 
-        auto closest = eastl::min(distanceX, distanceY);
-
-        if(closest < 20) {
+        if(distanceX < 30 && distanceY < 30) {
             m_playerScore++;
         }
     }
 
     //remove offscreen bullets
-    m_bullets.clear();
-    m_bullets.assign(stillAlive.begin(), stillAlive.end());
+    if(stillAlive.size() > 0) {
+        m_bullets.clear();
+        m_bullets.assign(stillAlive.begin(), stillAlive.end());
+    }
 }
 
 void mi::Scenes::Geidontei::inputHandling() {
@@ -260,6 +269,37 @@ void mi::Scenes::Geidontei::render() {
     gpu().chain(currentClear);
 
     psyqo::Prim::TPage tpage;
+
+    //background tpage
+    tpage.attr
+        .setPageX(12)
+        .setPageY(0)
+        .set(psyqo::Prim::TPageAttr::Tex16Bits)
+        .set(psyqo::Prim::TPageAttr::SemiTrans::FullBackAndFullFront)
+        .enableDisplayArea();
+
+    gpu().sendPrimitive(tpage);
+
+    psyqo::Prim::TexturedQuad backgroundSpriteFirst {};
+
+    backgroundSpriteFirst.pointA = {.x = 0, .y = 0};
+    backgroundSpriteFirst.pointB = {.x = 320, .y = 0};
+    backgroundSpriteFirst.pointC = {.x = 320, .y = 256};
+    backgroundSpriteFirst.pointD = {.x = 0, .y = 256};
+    backgroundSpriteFirst.tpage = tpage.attr;
+    backgroundSpriteFirst.uvA = psyqo::PrimPieces::UVCoords{0, 0};
+    backgroundSpriteFirst.uvB = psyqo::PrimPieces::UVCoords{255, 0};
+
+    auto uvCD = psyqo::PrimPieces::UVCoordsPadded{};
+    uvCD.u = 255;
+    uvCD.v = 255;
+
+    backgroundSpriteFirst.uvC = uvCD;
+
+    uvCD.u = 0;
+    backgroundSpriteFirst.uvD = uvCD;
+
+    gpu().sendPrimitive(backgroundSpriteFirst);
 
     tpage.attr
         .setPageX(5)
@@ -314,15 +354,17 @@ void mi::Scenes::Geidontei::render() {
 
     Bullet::setupBulletDrawing(gpu());
 
-    for(int i = 0; i != m_bullets.size(); i++) {
+    uint32_t bulletCount = m_bullets.size();
+
+    for(int i = 0; i != bulletCount; i++) {
         m_bullets[i].draw(gpu());
     }
 
     psyqo::Vertex textVertex{};
-    textVertex.x = 80;
+    textVertex.x = 0;
     textVertex.y = 2;
 
-    // _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d", m_playerScore, m_playerLives);
+    _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.b = 255}, "SCORE: %d; LIVES: %d; BULLETS: %d", m_playerScore, m_playerLives, bulletCount);
 
     //send all the fragments and the ordering table to the gpu
     gpu().chain(ot);

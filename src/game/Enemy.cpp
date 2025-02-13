@@ -101,6 +101,7 @@ UpdateAction Enemy::update(eastl::vector<Bullet>& bulletList) {
                         velocity = current.newVelocity;
                         break;
                     case ActionType::ShootPattern:
+                        uint32_t patternSize = current.patternToShoot.size();
                         for(int i = 0; i != current.patternToShoot.size(); i++) {
                             psyqo::Vec2 relativeToEnemy = (current.patternToShoot[i].position + position) - (spriteSize / 2);
     
