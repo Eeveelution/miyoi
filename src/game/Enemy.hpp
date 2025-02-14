@@ -30,16 +30,19 @@ class ActionElement {
 
     ActionElement(uint32_t time, eastl::vector<Bullet> pattern) 
     : patternToShoot(pattern),
+      repeatEvery(0),
       time(time),
       type(ActionType::ShootPattern) {}
 
     ActionElement(uint32_t time, psyqo::Vec2 newVelocity) 
     : type(ActionType::Movement), 
+    repeatEvery(0),
       time(time),
       newVelocity(newVelocity) {}
 
     ActionElement(uint32_t time, uint32_t endTime, eastl::array<psyqo::Vec2, 3> curve) 
       : type(ActionType::BezierMovement), 
+      repeatEvery(0),
         time(time),
         length(endTime),
         bezierCurve(curve) {}

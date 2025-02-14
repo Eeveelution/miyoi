@@ -31,6 +31,7 @@ namespace mi {
         private:
             uint32_t time;
             bool paused;
+            uint32_t lastStartPress;
 
             GameBase& _game; 
 

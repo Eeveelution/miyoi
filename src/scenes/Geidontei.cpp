@@ -229,7 +229,7 @@ void mi::Scenes::Geidontei::createStage() {
         psyqo::Vec2 rp2 = {.x = 170, .y = 120};
         psyqo::Vec2 rp3 = {.x = 170, .y = -64};
 
-        for(int i = 0; i != 10; i++) {
+        for(int i = 0; i != 16; i++) {
             if(i % 2 == 0) {
                 enemy.uv = {.u = 32, .v = 0};
             } else {
@@ -243,7 +243,7 @@ void mi::Scenes::Geidontei::createStage() {
 
             enemy.elements.push_back(disappearOffscreen);
             enemy.elements.push_back(patternShoot);
-            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 10) + 600));
+            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 30) + 600));
 
             enemies.push_back(enemy);
 
@@ -251,10 +251,48 @@ void mi::Scenes::Geidontei::createStage() {
 
             enemy.elements.push_back(disappearOffscreenR);
             enemy.elements.push_back(patternShootR);
-            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 10) + 600));
+            enemy.elements.push_back(ActionElement(ActionType::Deactivate, 1200 + (i * 30) + 600));
 
             enemies.push_back(enemy);
         }
+    }
+
+    const int positionList[] = { 71 ,94 ,60 ,112 ,117 ,114 ,64, 31 ,86, 34 ,97 ,11 ,48, 7 ,44 ,1 ,111 ,78, 82 ,28, 17 ,51 ,5 ,107 ,76 ,93 ,102 ,3, 119 ,115, 57 ,106, 26, 55, 11, 90 };
+
+    for(int i = 0; i != 32; i++) {
+        if(i % 2 == 0) {
+            eastl::vector<Bullet> straightDownPattern;
+
+            Bullet b0 = Bullet(psyqo::Vec2{0, 0}, 40, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b0);
+            Bullet b1 = Bullet(psyqo::Vec2{0, 0}, 50, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b1);
+            Bullet b2 = Bullet(psyqo::Vec2{0, 0}, 60, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b2);
+            Bullet b3 = Bullet(psyqo::Vec2{0, 0}, 70, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b3);
+            Bullet b4 = Bullet(psyqo::Vec2{0, 0}, 80, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b4);
+    
+            enemy.elements.clear();
+            enemy.elements.push_back(ActionElement(1900 + (i * 30), straightDownPattern));
+
+            enemy.position = {.x = -64, .y = psyqo::FixedPoint<>(positionList[i], 0) };
+            enemy.elements.push_back(ActionElement(1800 + (i * 30), psyqo::Vec2{.x = 1, .y = 0}));
+        } else {
+            eastl::vector<Bullet> straightDownPattern;
+
+            Bullet b0 = Bullet(psyqo::Vec2{0, 0}, 100, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b0);
+            Bullet b1 = Bullet(psyqo::Vec2{0, 0}, 110, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b1);
+            Bullet b2 = Bullet(psyqo::Vec2{0, 0}, 120, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b2);
+            Bullet b3 = Bullet(psyqo::Vec2{0, 0}, 130, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b3);
+            Bullet b4 = Bullet(psyqo::Vec2{0, 0}, 140, psyqo::Vec2{.x = 1.5, .y = 1.5}); straightDownPattern.push_back(b4);
+    
+            enemy.elements.clear();
+            enemy.elements.push_back(ActionElement(1900 + (i * 30), straightDownPattern));
+    
+            enemy.position = {.x = 384, .y = psyqo::FixedPoint<>(positionList[i], 0) };
+            enemy.elements.push_back(ActionElement(1800 + (i * 30), psyqo::Vec2{.x = -1, .y = 0}));
+        }
+
+        enemy.elements.push_back(ActionElement(ActionType::Deactivate, 3300));
+
+        enemies.push_back(enemy);
     }
 }
 
@@ -269,8 +307,9 @@ void mi::Scenes::Geidontei::frame() {
 }
 
 void mi::Scenes::Geidontei::update() {
-    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Start)) {
-        paused = true;
+    if(pad.isButtonPressed(psyqo::AdvancedPad::Pad1a, psyqo::AdvancedPad::Button::Start) && (time - lastStartPress) > 30) {
+        paused = !paused;
+        lastStartPress = time;
     }
 
     if(!paused) {
@@ -355,16 +394,19 @@ void mi::Scenes::Geidontei::render() {
     gpu().getNextClear(currentClear.primitive, m_clearColor);
     gpu().chain(currentClear);
 
-    background1y++;
-    background2y++;
-
-    if(background1y >= 256) {
-        background1y = -255;
+    if(!paused) {
+        background1y++;
+        background2y++;
+    
+        if(background1y >= 256) {
+            background1y = -255;
+        }
+    
+        if(background2y >= 256) {
+            background2y = -255;
+        }
     }
 
-    if(background2y >= 256) {
-        background2y = -255;
-    }
 
     psyqo::Prim::TPage tpage;
 
@@ -469,6 +511,10 @@ void mi::Scenes::Geidontei::render() {
     textVertex.y = 2;
 
     _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.r = 255,  .g = 255, .b = 255}, "SCORE: %d; LIVES: %d; TIME: %d", m_playerScore, m_playerLives, time);
+
+    if(paused) {
+        _game.getSystemFont().print(gpu(), "PAUSED", psyqo::Vertex{.x = 140, .y = 100}, psyqo::Color{.r = 255,  .g = 255, .b = 255});
+    }
 
     time++;
 }
