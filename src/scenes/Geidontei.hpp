@@ -33,6 +33,8 @@ namespace mi {
             bool paused;
             uint32_t lastStartPress;
 
+            uint32_t loadStage;
+
             GameBase& _game; 
 
             psyqo::Fragments::SimpleFragment<psyqo::Prim::FastFill> m_clearFragment[2];

@@ -290,7 +290,7 @@ void mi::Scenes::Geidontei::createStage() {
             enemy.elements.push_back(ActionElement(1800 + (i * 30), psyqo::Vec2{.x = -1, .y = 0}));
         }
 
-        enemy.elements.push_back(ActionElement(ActionType::Deactivate, 3300));
+        enemy.elements.push_back(ActionElement(ActionType::Deactivate, 3000));
 
         enemies.push_back(enemy);
     }
@@ -513,7 +513,7 @@ void mi::Scenes::Geidontei::render() {
     _game.getSystemFont().printf(gpu(), textVertex, psyqo::Color{.r = 255,  .g = 255, .b = 255}, "SCORE: %d; LIVES: %d; TIME: %d", m_playerScore, m_playerLives, time);
 
     if(paused) {
-        _game.getSystemFont().print(gpu(), "PAUSED", psyqo::Vertex{.x = 140, .y = 100}, psyqo::Color{.r = 255,  .g = 255, .b = 255});
+        _game.getSystemFont().print(gpu(), "PAUSED", psyqo::Vertex{.x = 100, .y = 100}, psyqo::Color{.r = 255,  .g = 255, .b = 255});
     }
 
     time++;

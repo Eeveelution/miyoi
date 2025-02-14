@@ -27,6 +27,7 @@ Enemy::Enemy(psyqo::Vec2 position, psyqo::Vec2 initialVelocity, uint8_t tpageX, 
     this->tpageY = tpageY;
     this->doingBezierMovement = false;
     this->uv = psyqo::PrimPieces::TexInfo{ .u = 0, .v = 0 };
+    this->elements = {};
 }
 
 void Enemy::draw(psyqo::GPU& gpu) {
